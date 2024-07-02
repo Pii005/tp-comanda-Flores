@@ -18,11 +18,11 @@ class AltaComida
     {
         
         if (!self::buscarComida($nombre)) {
-            echo "Es nuevo<br>";
-            $this->crearNuevo($nombre, $tipoEmpleado, $precio, $tiempoPreparacion);
+            // echo "Es nuevo<br>";
+            $msg = $this->crearNuevo($nombre, $tipoEmpleado, $precio, $tiempoPreparacion);
+            return $msg;
         } else {
-            echo "Se encontró uno igual<br>";
-            echo "Error en el proceso<br>";
+            return "comida no encontrada";
         }
     }
 
@@ -39,9 +39,9 @@ class AltaComida
             $consulta->bindValue(':precio', $comida->getPrecio(), PDO::PARAM_STR);
             $consulta->bindValue(':tiempoPreparacion', $comida->getTiempoPreparacion(), PDO::PARAM_INT);
             $consulta->execute();
-            echo "Guardado<br>";
+            return "Guardado con exito";
         } else {
-            echo "Error en validaciones <br>";
+            return "Error en validaciones";
         }
     }
 
@@ -66,7 +66,7 @@ class AltaComida
             $comida = $consulta->fetch(PDO::FETCH_ASSOC);
             return $comida;
         } else {
-            echo "Comida no encontrada<br>";
+            // echo "Comida no encontrada<br>";
             return null;
         }
     }
@@ -99,7 +99,7 @@ class AltaComida
             }
             else
             {
-                echo "Error en validaciones!!<br>";
+                return "Error en validaciones!!<br>";
             }
         }
 
@@ -124,9 +124,9 @@ class AltaComida
             $consulta->bindValue(':nuevoPrecio', $nuevoPrecio, PDO::PARAM_STR);
             $consulta->bindValue(':nuevoTiempoPreparacion', $nuevoTiempoPreparacion, PDO::PARAM_INT);
             $consulta->execute();
-            echo "Modificado<br>";
+            return "Modificado";
         } else {
-            echo "No existe<br>";
+            return "No existe<br>";
         }
     }
 
@@ -134,14 +134,14 @@ class AltaComida
     {
         self::obtenerAcceso();
         if (self::buscarComida($nombre)) {
-            echo "El elemento existe<br>";
+            // echo "El elemento existe<br>";
             $consulta = self::$acceso->prepararConsulta("DELETE FROM comidas WHERE nombre = :nombre");
             $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
             $consulta->execute();
-            echo "Eliminado con éxito<br>";
-            return $consulta->rowCount();
+            return "Eliminado con éxito";
+            // return $consulta->rowCount();
         } else {
-            echo "El elemento no existe<br>";
+            return "El elemento no existe";
         }
     }
 
@@ -156,9 +156,9 @@ class AltaComida
                 $comida['tiempoPreparacion'],
                 $comida['id']
             );
-            echo $comidaObj->mostrar();
+            return $comidaObj->mostrar();
         } else {
-            echo "Comida no encontrada";
+            return "Comida no encontrada";
         }
     }
     

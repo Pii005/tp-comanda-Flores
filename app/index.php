@@ -16,6 +16,8 @@ require_once './db/AccesoDatos.php';
 // require_once './middlewares/Logger.php';
 
 require_once './controllers/UsuarioController.php';
+require_once './controllers/controlerMesas.php';
+require_once './controllers/controlerComida.php';
 
 // Load ENV
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -36,6 +38,20 @@ $app->group('/usuarios', function (RouteCollectorProxy $group) {
     $group->get('/{usuario}', \UsuarioController::class . ':TraerUno');
     $group->post('[/]', \UsuarioController::class . ':CargarUno');
   });
+
+$app->group('/mesa',  function (RouteCollectorProxy $group)
+{
+  $group->post('/ingresar', \ControlerMesas::class . ':IngresarMesa');
+  $group->get('/mostrarUna', \ControlerMesas::class . ':mostrarUnaMesa');
+  $group->get('/eliminarUna', \ControlerMesas::class . ':eliminarUnaMesa');
+});
+
+$app->group('/comida',  function (RouteCollectorProxy $group)
+{
+  $group->post('/ingresar', \ControlerComida::class . ':ingresarComida');
+  $group->get('/mostrarUna', \ControlerComida::class . ':mostrarUnaComida');
+  $group->get('/eliminarUna', \ControlerComida::class . ':eliminarUnaComida');
+});
 
 $app->get('[/]', function (Request $request, Response $response) {    
     $payload = json_encode(array("mensaje" => "Slim Framework 4 PHP"));

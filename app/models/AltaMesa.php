@@ -4,6 +4,7 @@
 
 include_once "./Enumerados/estadoMesa.php";
 include_once "./db/AccesoDatos.php";
+include_once 'mesa.php';
 date_default_timezone_set('America/Argentina/Buenos_Aires'); 
 
 
@@ -20,15 +21,22 @@ class AltaMesa
 
     public function crearYGuardar($id)
     {
-        self::obtenerAcceso();
-        $mesa = new mesa($id);
-        $consulta = self::$acceso->prepararConsulta("INSERT INTO mesas (id, estado, horaLlegada) 
-            VALUES (:id, :estado, :horaLlegada)");
-        
-        $consulta->bindValue(':id', $mesa->getId(), PDO::PARAM_STR);
-        $consulta->bindValue(':estado', $mesa->getEstado(), PDO::PARAM_STR);
-        $consulta->bindValue(':horaLlegada', $mesa->getHoraLlegada()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
-        $consulta->execute();
+        if(self::validarMesaNoCerrada($id))
+        {
+            self::obtenerAcceso();
+            $mesa = new mesa($id);
+            $consulta = self::$acceso->prepararConsulta("INSERT INTO mesas (id, estado, horaLlegada) 
+                VALUES (:id, :estado, :horaLlegada)");
+            
+            $consulta->bindValue(':id', $mesa->getId(), PDO::PARAM_STR);
+            $consulta->bindValue(':estado', $mesa->getEstado(), PDO::PARAM_STR);
+            $consulta->bindValue(':horaLlegada', $mesa->getHoraLlegada()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
+            $consulta->execute();
+            return "Mesa ocupada con exito";
+        }else
+        {
+            return "Mesa ocupada, ingrese otro id";
+        }
         //echo "Mesa creada<br>";
     }
 
@@ -39,12 +47,12 @@ class AltaMesa
         $consulta = self::$acceso->prepararConsulta("SELECT id 
         FROM mesas 
         WHERE id = :id");
-        $consulta->bindValue(':id', $id, PDO::PARAM_STR);
+        $consulta->bindValue(':id', $id, PDO::PARAM_INT);
         $consulta->execute();
         // Verificar si hay resultados
         $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
 
-        if (count($resultados) > 0) {
+        if (count($resultados) >= 1) {
             return true;
         } else {
             return false;
@@ -80,14 +88,14 @@ class AltaMesa
 
         if(self::buscarMesa($id))
         {
-            echo "El elemento existe<br>";
+            
             $consulta = self::$acceso->prepararConsulta("DELETE FROM mesas WHERE id = :id");
             $consulta->bindValue(':id', $id, PDO::PARAM_INT);
             $consulta->execute();
-            echo "Eliminado con existo<br>";
-            return $consulta->rowCount();
+            return "Eliminado con exito<br>";
+            // return $consulta->rowCount();
         }else{
-            echo "El elemento no existe<br>";
+            return "La mesa no existe<br>";
         }
     }
 
@@ -100,21 +108,41 @@ class AltaMesa
             $consulta->execute();
             return $consulta->fetch(PDO::FETCH_ASSOC);
         } else {
-            echo "Mesa no encontrada<br>";
+            // echo "Mesa no encontrada<br>";
             return null;
         }
     }
 
-    public static function validarMesaOcupada($idMesa)
+    public static function validarMesaNoCerrada($idMesa)
+    {
+        
+        $mesa = self::devolverMesa($idMesa);
+
+        if($mesa != null)
+        {
+            if($mesa['estado'] == estadoMesa::cerrada)
+            {
+                return true;//Mesa cerrada y habilitada a usar
+            }
+            else{
+                return false; //La mesa esta ocupada
+            }
+        }
+        return true;//mesa no existe y se puede usar
+        
+    }
+
+    public static function validarMesaOcupada($idMesa)//Para hacer el cambio de estado de mesa
     {
         $mesa = self::devolverMesa($idMesa);
 
-        if($mesa)//Mesa existe
+        if($mesa != null)//Mesa existe
         {
             if($mesa['estado'] == estadoMesa::esperando)//esta siendo ocupada y estan esperando
             {
                 return true;
             }
+            
         }
         return false;
 
@@ -130,9 +158,9 @@ class AltaMesa
             $MesaObj->setHoraSalida($Mesa['horaSalida']);
             $MesaObj->setSocioCerro($Mesa['socioCerro']);
 
-            echo $MesaObj->mostrar();
+            return $MesaObj->mostrar();
         } else {
-            echo "Mesa no encontrada";
+            return "Mesa no encontrada";
         }
     }
 

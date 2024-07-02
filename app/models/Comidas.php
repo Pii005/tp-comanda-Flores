@@ -66,11 +66,16 @@ class Comidas{
     }
 
     public function mostrar() {
-        return "ID: " . $this->id . "<br>" .
-                "Nombre: " . $this->nombre . "<br>" .
-                "Tipo de Empleado: " . $this->tipoEmpleado . "<br>" .
-                "Precio: " . $this->precio . "<br>" .
-                "Tiempo de Preparación: " . $this->tiempoPreparacion . "<br>";
+        
+        $data = array(
+            "ID" => $this->id,
+            "Nombre" => $this->nombre,
+            "Precio" => $this->precio,
+            "Tiempo de Preparación" => $this->tiempoPreparacion
+        );
+
+        return $data;
+
     }
 
     

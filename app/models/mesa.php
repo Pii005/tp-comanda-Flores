@@ -23,20 +23,23 @@ class mesa
 
 
     public function mostrar()
-    {
-        $cadena =  "ID: " . $this->id . "<br>";
-        $cadena .= "Estado: " . $this->estado . "<br>";
-        $cadena .= "Hora llegada: " . $this->horaLlegada . "<br>";
-        if($this->horaSalida != "0000-00-00 00:00:00")
-        {
-            $cadena .= "Hora que el cliente se fue: " . $this->horaSalida . "<br>";
-        }
-        if($this->socioCerro != null)
-        {
-            $cadena .= "Socio que cerro la mesa: " . $this->socioCerro . "<br>";
-        }
-        return $cadena;
+{
+    $data = array(
+        "ID" => $this->id,
+        "Estado" => $this->estado,
+        "Hora llegada" => $this->horaLlegada,
+    );
+
+    if ($this->horaSalida != "0000-00-00 00:00:00") {
+        $data["Hora que el cliente se fue"] = $this->horaSalida;
     }
+    if ($this->socioCerro != null) {
+        $data["Socio que cerro la mesa"] = $this->socioCerro;
+    }
+
+    return $data;
+}
+
 
     public function obtenerTiempo()
     {
