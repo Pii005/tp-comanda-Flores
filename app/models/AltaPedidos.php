@@ -76,16 +76,20 @@ class AltaPedidos
                 if($estadoCambiado)
                 {
                     
-                    self::crearYGuardar($pedido);
+                    $msg = self::crearYGuardar($pedido);
+                    return $msg;
                 }
-                
             }
             else
             {
-                echo "Error!";
+                return "El pedido no se pudo guardar";
             }
             //si esta todo bien, creo el pedido y lo guardo 
 
+        }
+        else
+        {
+            return "La mesa no esta libre";
         }
 
     }
@@ -105,7 +109,7 @@ class AltaPedidos
             $consulta->bindValue(':inicioPedido', $pedido->getInicioPedido()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
             $consulta->execute();
 
-            echo "Guardado<br>";
+            return "Pedido guardado con exito";
     }
 
     
@@ -115,15 +119,12 @@ class AltaPedidos
     {
         $pedido = self::buscarPedido($id);
         if ($pedido) {
-            $pedido->mostrar();
+            return $pedido->mostrar();
         } else {
-            echo "Pedido no encontrado.<br>";
+            return "Pedido no encontrado";
         }
     }  
 
-    
-
-    
     public function eliminarPedido($id)
     {
         if(self::buscarPedido($id))
@@ -132,10 +133,10 @@ class AltaPedidos
             $consulta = $this->acceso->prepararConsulta("DELETE FROM pedidos WHERE id = :id");
             $consulta->bindValue(':id', $id, PDO::PARAM_INT);
             $consulta->execute();
-            echo "Eliminado con existo<br>";
-            return $consulta->rowCount();
+            // echo "Eliminado con existo<br>";
+            return "Pedido eliminado con existo";;
         }else{
-            echo "El elemento no existe<br>";
+            return "El pedido no existe";
         }
     }
 
@@ -162,7 +163,7 @@ class AltaPedidos
         $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_INT);
         $consulta->execute();
 
-        echo "Modificado con exito!<br>";
+        return "Pedido modificado con exito";
     }
 
     public function cambiarEstados($idPedido, $estado)
@@ -182,10 +183,11 @@ class AltaPedidos
         $consulta->bindValue(':id', $idPedido, PDO::PARAM_INT);
         $consulta->execute();
 
-        echo "Modificado con exito!<br>";
+        // echo "Modificado con exito!<br>";
 
     }
 
+    //reviso si el pedido tiene todos los pendientes terminados o no
     public function pedidoTerminado($idPedido)
     {
         $pendientesTerminados = AltaPendientes::revisarPendientesTerminados($idPedido);
@@ -193,10 +195,28 @@ class AltaPedidos
         {
             $this->cambiarEstados($idPedido, EstadoPedido::listo);
             $this->mostrarPedido($idPedido);
-            echo "Pedido terminado, Listo para entregar!!<br>";
-            return;
+            
+            return "Pedido terminado, Listo para entregar";
         }
-        echo "El pedido aun no esta listo<br>";
+        return "El pedido aun no esta listo";
+    }
+
+
+    public function pedidoEntregado($idPedido)
+    {
+        $pedido = self::buscarPedido($idPedido);
+        if($pedido->getEstadoPedido() == EstadoPedido::listo)
+        {
+            $this->cambiarEstados($idPedido, EstadoPedido::servido);
+            $this->mostrarPedido($idPedido);
+            return "Pedido entregado";
+        }
+        if($pedido->getEstadoPedido() == EstadoPedido::servido 
+        || $pedido->getEstadoPedido() == EstadoPedido::pagado )
+        {
+            return "Este pedido ya fue entregado";
+        }
+        return "El pedido aun no esta listo";
     }
 
 }

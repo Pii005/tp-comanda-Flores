@@ -3,16 +3,11 @@
 class Usuario
 {
     public $id;
-
     public $nombre;
     public $apellido;
-
     public $puesto;
-
     public $alta;
-
     public $baja;
-
     public $contraseña;
     public $email;
 
@@ -33,17 +28,18 @@ class Usuario
 
     public function Mostrar()
     {
-        $cadena = "<br>";
-        $cadena .= "ID: " . $this->id. "<br>";
-        $cadena .= "nombre: " . $this->nombre . " " . $this->apellido. "<br>";
-        $cadena .= "puesto: " . $this->puesto. "<br>";
-        $cadena .= "Email: " . $this->email. "<br>";
-        $cadena .= "Ingreso: " . $this->alta. "<br>";
+        $data = array(
+            "ID" => $this->id,
+            "nombre" => $this->nombre,
+            "puesto" => $this->puesto,
+            "Ingreso" => $this->alta
+        );
+        
         if($this-> baja == "0000-00-00")
         {
-            $cadena .= "Baja: " . $this->baja. "<br>";
+            $data["Baja"] =  $this->baja;
         }
-        return $cadena;
+        return $data;
     }
 
     public static function ObtenerMostrar($email)
@@ -55,14 +51,14 @@ class Usuario
             $empleado['clave'], $empleado['Email']);
             $obj->setId($empleado['id']);
             $obj->setAlta($empleado['ingreso']);
-            echo $obj->Mostrar();
-            return true;
+            return $obj->Mostrar();
         }
         return false;
     }
 
     public static function buscarEmpleado($email)
     {
+        
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
 
         $consulta = $objAccesoDatos->prepararConsulta(
@@ -75,9 +71,9 @@ class Usuario
         $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
         if (count($resultados) > 0) {
             return true;
-        } else {
-            return false;
-        }   
+        }  
+        
+        return false;
     }
 
     public static function buscarPuesto($puesto)
@@ -113,10 +109,8 @@ class Usuario
 
     public function crearUsuario()
     {
-        
-        if($this->verificarEmpleado())
+        if(!Usuario::buscarEmpleado($this->email))
         {
-            echo "Verificado con exito";
             $objAccesoDatos = AccesoDatos::obtenerInstancia();
             $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO empleados (nombre, apellido, puesto, ingreso, clave, email)
             VALUES (:nombre, :apellido, :puesto, :ingreso, :clave, :Email)");
@@ -131,37 +125,37 @@ class Usuario
 
             $consulta->bindValue(':Email', $this->email, PDO::PARAM_STR);
             $consulta->execute();
-            echo "creado con exito";
-            return true;
+            // echo "creado con exito";
+            return "Usuario creado";
         }
         else
         {
-            return false;
+            return "El usuario ya existe";
         }
         //return $objAccesoDatos->obtenerUltimoId();
     
         
     }
 
-    public function verificarEmpleado()
-    {
-        if(in_array(self::getPuestouser(),
-        [
-            TiposEmpleados::bartender,
-            TiposEmpleados::cervecero,
-            TiposEmpleados::cocinero,
-            TiposEmpleados::mozo,
-            TiposEmpleados::socio,
-            TiposEmpleados::administrador
-        ]))
-        {
-            echo "bien";
-            return true;
-        }else{
-            echo "no " . self::getPuestouser();
-            return false;
-        }
-    }
+    // public function verificarPuesto()
+    // {
+    //     if(in_array(self::getPuestouser(),
+    //     [
+    //         TiposEmpleados::bartender,
+    //         TiposEmpleados::cervecero,
+    //         TiposEmpleados::cocinero,
+    //         TiposEmpleados::mozo,
+    //         TiposEmpleados::socio,
+    //         TiposEmpleados::administrador
+    //     ]))
+    //     {
+    //         // echo "bien";
+    //         return true;
+    //     }else{
+    //         // echo "no " . self::getPuestouser();
+    //         return false;
+    //     }
+    // }
 
     /*public static function obtenerTodos()
     {
@@ -189,7 +183,7 @@ class Usuario
 
         if($user)
         {
-            if($user->getBaja == "0000-00-00")
+            if($user['baja'] == "0000-00-00")
             {   
                 return true;
             }
@@ -197,24 +191,6 @@ class Usuario
         }
         return false;
     }
-
-
-    /*public static function modificarUsuario($id, $nombre, $apellido, $puesto, $email, $contraseña) {
-        $objAccesoDato = AccesoDatos::obtenerInstancia(); 
-        $consulta = $objAccesoDato->prepararConsulta("UPDATE empleados SET nombre = :nombre, apellido = :apellido, puesto = :puesto, email = :email, contraseña = :contraseña WHERE id = :id");
-
-        $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
-        $consulta->bindValue(':apellido', $apellido, PDO::PARAM_STR);
-        $consulta->bindValue(':puesto', $puesto, PDO::PARAM_STR);
-        $consulta->bindValue(':email', $email, PDO::PARAM_STR);
-
-        $claveHash = password_hash($contraseña, PASSWORD_DEFAULT);
-        $consulta->bindValue(':contraseña', $claveHash, PDO::PARAM_STR);
-
-        $consulta->bindValue(':id', $id, PDO::PARAM_INT);
-
-        $consulta->execute();
-    }*/
 
     public static function modificarDato($Email, $modificador, $nuevo) 
     {
@@ -262,7 +238,7 @@ class Usuario
         $consulta->bindValue(':Email', $email, PDO::PARAM_INT);
         $consulta->bindValue(':baja', date_format($fecha, 'Y-m-d H:i:s'));
         $consulta->execute();
-        return true;
+        return "Usuario dado de baja con exito";
     }
 
     public static function restaurarUser($email)
@@ -276,7 +252,7 @@ class Usuario
         $consulta->bindValue(':ingreso', date_format($fecha, 'Y-m-d H:i:s'));
         $consulta->bindValue(':baja', $baja);
         $consulta->execute();
-        return true;
+        return "usuario dado de alta denuevo";
     }
 
 

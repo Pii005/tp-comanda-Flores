@@ -7,176 +7,44 @@ use Slim\Psr7\Response;
 include_once "./models/Usuario.php";
     
 
-class DatosMiddleware
+class verificacionUsuarioMW
 {
-    public function crearUserMW(Request $request, RequestHandler $handler)
+    public function __invoke(Request $request, RequestHandler $handler): Response
     {
-        $params = $request->getParsedBody();
-        
-        if (isset($params['nombre']) && isset($params["apellido"]) && isset($params["puesto"]) &&
-            isset($params["contraseña"]) && isset($params["email"])) {
-            
-            $nombre = $params["nombre"];
-            $apellido = $params["apellido"];
-            $puesto = $params["puesto"];
-            $contraseña = $params["contraseña"];
-            $email = $params["email"];
+        $parametros = $request->getParsedBody();
 
-            $empleado = new Usuario($nombre, $apellido, $puesto, $contraseña, $email);
-
-            if (Usuario::buscarEmpleado($email)) {
-                // Usuario encontrado, devolver error
-                $response = new Response();
-                $response->getBody()->write(json_encode(array("error" => "El usuario ya existe")));
-                return $response->withStatus(400);
-            } else {
-                // Usuario no encontrado, crear nuevo usuario
-                if ($empleado->crearUsuario()) {
-                    // Usuario creado exitosamente, continuar con el siguiente middleware/controlador
-                    $response = $handler->handle($request);
-                    echo "creado!!!";
-                } else {
-                    // Error al crear el usuario
-                    $response = new Response();
-                    $response->getBody()->write(json_encode(array("error" => "El tipo de empleo es incorrecto")));
-                    return $response->withStatus(400);
-                }
-            }
-        } else {
-            // Faltan parámetros, devolver error
-            $response = new Response();
-            $response->getBody()->write(json_encode(array("error" => "Faltan parámetros")));
-            return $response->withStatus(400);
-        }
-
-        return $response;
-    }
-
-
-    public function modificarUserMW(Request $request, RequestHandler $handler)
-    {
-        $params = $request->getQueryParams();
-
-        if(isset($_POST['Email']) && isset($_POST['modificar']) 
-        && isset($_POST['nuevo'])) {
-            
-            $nuevo = $params["nuevo"];
-            $modificar = $params["modificar"];
-            $email = $params["Email"];
-            
-            $camposPermitidos = ['nombre', 'apellido', 'puesto', 'email', 'clave', 'ingreso']; 
-            if (!in_array($modificar, $camposPermitidos)) 
-            {
-                $response = new Response();
-                        $response->getBody()->write(json_encode(array("error" => "El nombre de la modificacion no es valida")));
-                        return $response->withStatus(400);
-            }else{
-                if (!in_array($modificar, $camposPermitidos)) {
-                    $response = new Response();
-                    $response->getBody()->write(json_encode(array("error" => "campos no permitidos")));
-                    return $response->withStatus(400);
-
-                } else {
-                    
-                    if (Usuario::modificarDato($email, $modificar, $nuevo)) {
-                        $response = $handler->handle($request);
-                        Usuario::ObtenerMostrar($_POST["Email"]);
-                    } else {
-                        
-                        $response = new Response();
-                        $response->getBody()->write(json_encode(array("error" => "No se pudo modificar el usuario")));
-                        return $response->withStatus(400);
-                    }
-                }
-            }
-
-        } else {
-            
-            $response = new Response();
-            $response->getBody()->write(json_encode(array("error" => "Faltan parámetros")));
-            return $response->withStatus(400);
-        }
-
-        return $response;
-    }
-
-
-
-    public function darBajaUserMW(Request $request, RequestHandler $handler)
-    {
-        $params = $request->getQueryParams();
-
-
-        if ($_SERVER['REQUEST_METHOD'] == 'DELETE') 
+        $response = new Response();
+        if(isset($parametros["puesto"]))
         {
-            if(isset($_GET["Email"])) {
-                $email = $params["Email"];
-                
-                if (!Usuario::buscarEmpleado($email)) {
-                    $response = new Response();
-                    $response->getBody()->write(json_encode(array("error" => "El usuario no existe")));
-                    return $response->withStatus(400);
-                } else {
-                    if (Usuario::borrarUsuario($email)) {
-                        $response = $handler->handle($request);
-                    } else {
-                        $response = new Response();
-                        $response->getBody()->write(json_encode(array("error" => "No se pudo dar de baja el usuario")));
-                        return $response->withStatus(400);
-                    }
-                }
-            } else {
-                $response = new Response();
-                $response->getBody()->write(json_encode(array("error" => "Faltan parámetros")));
-                return $response->withStatus(400);
+            $tipo = $parametros["puesto"];
+
+            if(in_array($tipo,
+            [
+                TiposEmpleados::bartender,
+                TiposEmpleados::cervecero,
+                TiposEmpleados::cocinero,
+                TiposEmpleados::mozo,
+                TiposEmpleados::socio,
+                TiposEmpleados::administrador
+            ]))
+            {
+                $response = $handler->handle($request);
+            }
+            else
+            {
+                $payload = json_encode(array("Error" => "Puesto no valido"));
+                $response->getBody()->write($payload);
             }
         }else
         {
-            $response = new Response();
-                $response->getBody()->write(json_encode(array("error" => "No se logro la conexion")));
-                return $response->withStatus(400);
+            $payload = json_encode(array("Error" => "parametros no validos"));
+            $response->getBody()->write($payload);
         }
 
-        return $response;
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
-
-    public function mostrarUserMW(Request $request, RequestHandler $handler)
-    {
-        $params = $request->getQueryParams();
-
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            if (isset($_GET["email"])) 
-            {
-                $email = $params["Email"];
-
-                if (!Usuario::buscarEmpleado($email)) {
-                    $response = new Response();
-                    $response->getBody()->write(json_encode(array("error" => "El usuario no existe")));
-                    return $response->withStatus(400);
-                } else {
-                    if (Usuario::ObtenerMostrar($email)) {
-                        $response = $handler->handle($request);
-                    } else {
-                        // Error al crear el usuario
-                        $response = new Response();
-                        $response->getBody()->write(json_encode(array("error" => "No se pudo mostrar el usuario")));
-                        return $response->withStatus(400);
-                    }
-                }
-            }else{
-                $response = new Response();
-                $response->getBody()->write(json_encode(array("error" => "Faltan parámetros")));
-                return $response->withStatus(400);
-            }
-        } else {
-            $response = new Response();
-            $response->getBody()->write(json_encode(array("error" => "No se logro hacer la conexion")));
-            return $response->withStatus(400);
-        }
-
-        return $response;
-    }
+    
 
 
 

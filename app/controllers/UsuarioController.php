@@ -1,76 +1,175 @@
 <?php
 require_once './models/Usuario.php';
-require_once './interfaces/IApiUsable.php';
 
-class UsuarioController extends Usuario implements IApiUsable
+//app\models\Usuario.php
+class UsuarioController 
 {
-    public function CargarUno($request, $response, $args)
+  public function ingresarUsuario($request, $response, $args)
+  {
+    $parametros = $request->getParsedBody();
+
+    if(isset($parametros['nombre']) && isset($parametros["apellido"]) 
+    && isset($parametros["puesto"]) && isset($parametros["clave"]) 
+    && isset($parametros["email"]))
     {
-        $parametros = $request->getParsedBody();
-
-        $usuario = $parametros['usuario'];
-        $clave = $parametros['clave'];
-
-        // Creamos el usuario
-        $usr = new Usuario();
-        $usr->usuario = $usuario;
-        $usr->clave = $clave;
-        $usr->crearUsuario();
-
-        $payload = json_encode(array("mensaje" => "Usuario creado con exito"));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
+      $nombre = $parametros['nombre'];
+      $apellido = $parametros["apellido"];
+      $puesto = $parametros["puesto"];
+      $contraseña = $parametros["clave"];
+      $email = $parametros["email"];
+      
+      try
+      {
+        $empleado = new Usuario($parametros['nombre'], $parametros["apellido"], $parametros["puesto"],
+        $parametros["clave"], $parametros["email"]);
+        
+          $msg = $empleado->crearUsuario();
+          $payload = json_encode(array("mensaje" => $msg));
+      }
+      catch(Exception $e)
+      {
+        $payload = json_encode(array("Error" => "No se pudo crear el usuario"));
+      }
+    }
+    else 
+    {
+        $payload = json_encode(array("Error" => "Los parametros son incorrectos"));
     }
 
-    public function TraerUno($request, $response, $args)
-    {
-        // Buscamos usuario por nombre
-        $usr = $args['usuario'];
-        $usuario = Usuario::obtenerUsuario($usr);
-        $payload = json_encode($usuario);
+    $response->getBody()->write($payload);
 
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
+    return $response->withHeader('Content-Type', 'application/json');
+  }
+
+  public function mostrarUnUsuario($request, $response, $args)
+  {
+    $params = $request->getQueryParams();
+
+      if ($_SERVER['REQUEST_METHOD'] === 'GET') 
+      {
+        if (isset($params["email"])) 
+        {
+          $email = $params["email"];
+          try
+          {
+            $msg = Usuario::ObtenerMostrar($email);
+            $payload = json_encode(array("mensaje" => $msg));
+          }
+          catch(Exception $e)
+          {
+            $payload = json_encode(array("Error" => "No se pudo crear el usuario"));
+          }
+        }
+      }else 
+      {
+        $payload = json_encode(array("Error" => "Los parametros son incorrectos"));
+      }
+
+    $response->getBody()->write($payload);
+
+    return $response->withHeader('Content-Type', 'application/json');
+  }
+
+  public function bajaUnUsuario($request, $response, $args)
+  {
+    $params = $request->getQueryParams();
+
+      if ($_SERVER['REQUEST_METHOD'] === 'GET') 
+      {
+        if (isset($params["email"])) 
+        {
+          $email = $params["email"];
+          try
+          {
+            $msg = Usuario::borrarUsuario($email);
+            $payload = json_encode(array("mensaje" => $msg));
+          }
+          catch(Exception $e)
+          {
+            $payload = json_encode(array("Error" => "No se pudo eliminar el usuario"));
+          }
+        }
+      }else 
+      {
+        $payload = json_encode(array("Error" => "Los parametros son incorrectos"));
+      }
+
+    $response->getBody()->write($payload);
+
+    return $response->withHeader('Content-Type', 'application/json');
+  }
+
+  public function Altadenuevo($request, $response, $args)
+  {
+    $params = $request->getQueryParams();
+
+      if ($_SERVER['REQUEST_METHOD'] === 'GET') 
+      {
+        if (isset($params["email"])) 
+        {
+          $email = $params["email"];
+          try
+          {
+            $msg = Usuario::restaurarUser($email);
+            $payload = json_encode(array("mensaje" => $msg));
+          }
+          catch(Exception $e)
+          {
+            $payload = json_encode(array("Error" => "No se pudo dar de alta al usuario"));
+          }
+        }
+      }else 
+      {
+        $payload = json_encode(array("Error" => "Los parametros son incorrectos"));
+      }
+
+    $response->getBody()->write($payload);
+
+    return $response->withHeader('Content-Type', 'application/json');
+
+  }
+
+  public function modificarUsuario($request, $response, $args)
+  {
+    $parametros = $request->getParsedBody();
+
+    if(isset($parametros['email']) && isset($parametros["modificar"]) 
+    && isset($parametros["nuevo"]))
+    {
+      $modificar = $parametros['modificar'];
+      $nuevo = $parametros["nuevo"];
+      $email = $parametros["email"];
+      
+      try
+      {
+        $verificado = Usuario::modificarDato($email, $modificar, $nuevo);
+        if($verificado)
+        {
+          $msg = Usuario::ObtenerMostrar($email);
+  
+          $payload = json_encode(array("usuario modificado" => $msg));
+        }
+        else
+        {
+          $payload = json_encode(array("Error" => "EL usuario este dado de baja"));
+
+        }
+      }
+      catch(Exception $e)
+      {
+        $payload = json_encode(array("Error" => "No se pudo crear el usuario"));
+      }
+    }
+    else 
+    {
+        $payload = json_encode(array("Error" => "Los parametros son incorrectos"));
     }
 
-    public function TraerTodos($request, $response, $args)
-    {
-        $lista = Usuario::obtenerTodos();
-        $payload = json_encode(array("listaUsuario" => $lista));
+    $response->getBody()->write($payload);
 
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-    }
-    
-    public function ModificarUno($request, $response, $args)
-    {
-        $parametros = $request->getParsedBody();
+    return $response->withHeader('Content-Type', 'application/json');
+  }
 
-        $nombre = $parametros['nombre'];
-        Usuario::modificarUsuario($nombre);
 
-        $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
 
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-    }
-
-    public function BorrarUno($request, $response, $args)
-    {
-        $parametros = $request->getParsedBody();
-
-        $usuarioId = $parametros['usuarioId'];
-        Usuario::borrarUsuario($usuarioId);
-
-        $payload = json_encode(array("mensaje" => "Usuario borrado con exito"));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-    }
 }

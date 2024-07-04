@@ -73,7 +73,7 @@ class Pedidos
         return $codigo;
     }
 
-    private  function procesarImagen($imagen)
+    private function procesarImagen($imagen)
     {
         $uploadDir = __DIR__ . "/ImagenesClientes/2024/";
         
@@ -82,33 +82,45 @@ class Pedidos
             mkdir($uploadDir, 0777, true);
         }
 
-        // $imagen = $this->getImagen();
-        $nombreImagen = $this->getId() . "_" . $this->getNombreCliente() . "." . pathinfo($imagen["name"], PATHINFO_EXTENSION);
+        // Obtener el nombre y la extensión del archivo subido
+        $nombreOriginal = $imagen->getClientFilename();
+        $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
+
+        // Crear un nuevo nombre para la imagen
+        $nombreImagen = $this->getId() . "_" . $this->getNombreCliente() . "." . $extension;
         $uploadFile = $uploadDir . $nombreImagen;
 
-        if (move_uploaded_file($imagen["tmp_name"], $uploadFile)) {
-            return $nombreImagen;
-        } else {
-            return false;
-        }
+        // Mover el archivo subido al directorio de destino
+        $imagen->moveTo($uploadFile);
+
+        return $nombreImagen;
     }
+
+    
 
     public function mostrar()
-    {
-        echo "<br>ID: " . $this->id . "<br>";
-        echo "Nombre del Cliente: " . $this->nombreCliente . "<br>";
-        echo "ID de la Mesa: " . $this->idMesa . "<br>";
-        //echo "Imagen: <img src='" . $this->imagen . "' alt='Imagen del pedido'><br>";
-        echo "Estado del Pedido: " . $this->estadoPedido . "<br>";
-        echo "Tiempo de Preparación: " . $this->tiempoPreparacion . " minutos<br>";
-        echo "Inicio del Pedido: " . $this->inicioPedido->format('Y-m-d H:i:s') . "<br>";
-        echo "Finalización del Pedido: " . ($this->finalizacionPedido ? $this->finalizacionPedido->format('Y-m-d H:i:s') : "N/A") . "<br>";
-        echo "Preparado en Tiempo: " . ($this->preparadoEnTiempo ? true : false) . "<br>";
-        echo "<br>";
-        echo "<br>";
+{
+    $datos = [
+        'ID' => $this->id,
+        'Nombre del Cliente' => $this->nombreCliente,
+        'ID de la Mesa' => $this->idMesa,
+        'ruta de foto' => $this->imagen,
+        // 'Imagen' => "<img src='" . $this->imagen . "' alt='Imagen del pedido'>",
+        'Estado del Pedido' => $this->estadoPedido,
+        'Tiempo de Preparación' => $this->tiempoPreparacion . " minutos",
+        'Inicio del Pedido' => $this->inicioPedido->format('Y-m-d H:i:s'),
+        'Finalización del Pedido' => $this->finalizacionPedido ? $this->finalizacionPedido->format('Y-m-d H:i:s') : "N/A",
+        'Preparado en Tiempo' => $this->preparadoEnTiempo ? true : false,
+    ];
 
-        AltaPendientes::mostrarPendientes($this->id);
+    // Asumiendo que AltaPendientes::mostrarPendientes($this->id) retorna un array
+    $pendientes = AltaPendientes::mostrarPendientes($this->id);
+    if ($pendientes) {
+        $datos['Pendientes'] = $pendientes;
     }
+
+    return $datos;
+}
 
 
     public function getId() 

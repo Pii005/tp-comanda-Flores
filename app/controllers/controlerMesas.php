@@ -2,7 +2,7 @@
 
 include_once './models/AltaMesa.php';
 
-class ControlerMesas extends AltaMesa
+class ControlerMesas 
 {
     public function IngresarMesa($request, $response, $args)
     {

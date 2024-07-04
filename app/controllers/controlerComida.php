@@ -3,9 +3,7 @@
 include_once './models/AltaComida.php';
 
 
-
-
-class ControlerComida extends AltaComida
+class ControlerComida 
 {
     public function ingresarComida($request, $response, $args)
     {
@@ -31,7 +29,6 @@ class ControlerComida extends AltaComida
         }
         else 
         {
-            // Manejar el caso en el que 'id' no está presente
             $payload = json_encode(array("Error" => "Parametro 'id' no encontrado"));
         }
 
@@ -62,7 +59,7 @@ class ControlerComida extends AltaComida
         }
         else
         {
-            $payload = json_encode(array("Error" => "Método no permitido"));
+            $payload = json_encode(array("Error" => "parametros no validos"));
         }
         
         $response->getBody()->write($payload);
@@ -93,7 +90,7 @@ class ControlerComida extends AltaComida
             }
         }else
         {
-            $payload = json_encode(array("Error" => "Método no permitido"));
+            $payload = json_encode(array("Error" => "parametros no validos"));
         }
         
         $response->getBody()->write($payload);

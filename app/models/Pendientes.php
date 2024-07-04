@@ -2,10 +2,6 @@
 
 include_once "./models/Comidas.php";
 include_once "./models/Pedido.php";
-include_once "./models/Empleado.php";
-
-
-
 
 class Pendientes
 {
@@ -33,13 +29,18 @@ class Pendientes
 
     public function Mostrar()
     {
-        echo "<br>Id Empleado a cargo: " . $this->idEmpleado . " Puesto: " . $this->puesto . "<br>";
-        echo "ID pedido: " . $this->idPedido . "<br>";
-        echo "Comida: " . $this->comida . "<br>";
-        echo "Hora de llegada: " . $this->horaLlegada->format('Y-m-d H:i:s') . "<br>";
-        echo $this->terminado ? "Pendiente terminado" : "Pendiente sin terminar";
-        echo "<br>";
+        $datos = [
+            'Id Empleado a cargo' => $this->idEmpleado,
+            'Puesto' => $this->puesto,
+            'ID pedido' => $this->idPedido,
+            'Comida' => $this->comida,
+            'Hora de llegada' => $this->horaLlegada->format('Y-m-d H:i:s'),
+            'Estado del Pendiente' => $this->terminado ? "Pendiente terminado" : "Pendiente sin terminar"
+        ];
+
+        return $datos;
     }
+
 
     public function getIdEmpleado()
     {

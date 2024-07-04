@@ -4,7 +4,7 @@ include_once "./models/Usuario.php";
 
 function PostIngreso()
 {
-    echo "entrando...";
+    // echo "entrando...";
     if(isset($_POST['nombre']) && isset($_POST["apellido"])&& isset($_POST["puesto"])
     && isset($_POST["contraseña"]) && isset($_POST["email"]))
     {

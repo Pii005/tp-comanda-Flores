@@ -22,8 +22,8 @@ class AltaPendientes
     public static function buscarPendientes($idPedido)
     {
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT * FROM pendientes WHERE id_pedido = :id_pedido");
-        $consulta->bindValue(':id_pedido', $idPedido, PDO::PARAM_STR);
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT * FROM pendientes WHERE idPedido = :idPedido");
+        $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_STR);
         $consulta->execute();
         return $consulta->fetchAll(PDO::FETCH_CLASS, 'Pendientes');
     }
@@ -34,10 +34,10 @@ class AltaPendientes
         $pendientes = self::buscarPendientes($idPedido);
         if ($pendientes) {
             foreach ($pendientes as $pendiente) {
-                $pendiente->Mostrar();
+                return $pendiente->Mostrar();
             }
         } else {
-            echo "No se encontraron pendientes para el pedido con ID: $idPedido";
+            return "No se encontraron pendientes para el pedido con ID: $idPedido";
         }
     }
 
@@ -46,8 +46,9 @@ class AltaPendientes
         $conteoEmpleados = [];
 
         $pendientes = self::ObtenerPendientes();
-        if(count($pendientes) > 1 && $pendientes != null)
-        {
+        var_dump($pendientes); // Depuración: verifica los pendientes
+
+        if ($pendientes != null && count($pendientes) > 1) {
             foreach ($pendientes as $pendiente) {
                 if ($pendiente['puesto'] === $puesto) {
                     $idEmpleado = $pendiente['idEmpleado'];
@@ -59,6 +60,8 @@ class AltaPendientes
                 }
             }
 
+            var_dump($conteoEmpleados); // Depuración: verifica el conteo de empleados
+
             $empleadoMenosAsignado = null;
             $minAsignaciones = PHP_INT_MAX;
 
@@ -68,17 +71,16 @@ class AltaPendientes
                     $empleadoMenosAsignado = $idEmpleado;
                 }
             }
-            
-            // echo $empleadoMenosAsignado;
+
+            var_dump($empleadoMenosAsignado); // Depuración: verifica el empleado menos asignado
             return $empleadoMenosAsignado;
-        }else
-        {
+        } else {
             $empleados = Usuario::buscarPuesto($puesto);
+            var_dump($empleados); // Depuración: verifica los empleados
+
             if ($empleados && count($empleados) > 0) {
-                foreach($empleados as $emple)
-                {
-                    if($emple->getPuestouser() == $puesto)
-                    {
+                foreach ($empleados as $emple) {
+                    if ($emple->getPuestouser() == $puesto) {
                         return $emple->getid();
                     }
                 }
@@ -89,22 +91,20 @@ class AltaPendientes
 
 
 
+
+
     public static function ingresoPendientes($idPedido, $items)
     {
-        //reviso que las comidas esten correstas - si no es asi se cancela el pedido
         $comidasValidas = self::validarComidas($items);
         if($comidasValidas)
         {
-            //mando a enviarComidas 
-            echo "Enviando a guardar pendientes...<br>";
+            
             self::enviarComidas($idPedido, $items);
 
-            //si esta todo bien (true) cantinua con el proceso - return true 
             return true;
         }
         else
         {
-            //de lo contrario cancela el pedido y tira el error para pedidos - return false
             return false;
         }   
     }
@@ -115,11 +115,9 @@ class AltaPendientes
         {
             if(!(AltaComida::buscarComida($c)))
             {
-                echo "La comida no existe" . " - " . $c;
                 return false;
             }
         }
-        echo "Comidas Todas validas";
         return true;//todas las comidas estan bien ingresadas
     }
 
@@ -129,31 +127,24 @@ class AltaPendientes
         //Leo los items
         foreach($items as $comida)
         {
-            //busco que tipo de puesto es la comida - return puesto
             $puesto = AltaComida::devolverPuesto($comida);
-            echo $puesto . " - ENTRANDO A GUARDADO";
+            // var_dump($puesto, $idPedido, $comida);
             if($puesto != null)
             {
-                //busco el empleado con menos pendientes en el puesto - return IdEmpleado
                 $idEmpleado = self::buscarMenosAsignado($puesto);
-                // echo "id: ". $idEmpleado .  "<br>";
-                
-                
+                var_dump("Cargando...");
                 if($idEmpleado != null)
                 {
-                    echo "Guardando pendiente... <br>";
-                    $pendiente = new Pendientes($idEmpleado, $puesto, $idPedido, $comida);
-                    echo $pendiente->getIdPedido();
-                    //guardo en la base pendientes - guardarPendiente(PendienteCreado)
-                    self::guardarPendiente($pendiente);
+                    var_dump("Entro");
+                    // $pendiente = new Pendientes($idEmpleado, $puesto, $idPedido, $comida);
+                    // self::guardarPendiente($pendiente);
+                    throw new InvalidArgumentException("ENTRO!!!");
 
                 }else
                 {
                     throw new InvalidArgumentException("El id del empleado es nulo<br>");
                     
                 }
-                
-
             }
             else{
                 throw new InvalidArgumentException("Error al guardar pendiente" . " - " . $puesto . ": la comida " . $comida);
@@ -164,27 +155,28 @@ class AltaPendientes
     public static function guardarPendiente($pendiente)
     {
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO pendientes (id_empleado, puesto, id_pedido, comida, horaLlegada, Terminado) 
-            VALUES (:id_empleado, :puesto, :id_pedido, :comida, :horaLlegada, :Terminado)");
+        $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO pendientes (idEmpleado, puesto, idPedido, comida, horaLlegada, terminado) 
+            VALUES (:idEmpleado, :puesto, :idPedido, :comida, :horaLlegada, :terminado)");
 
-            $consulta->bindValue(':id_empleado', $pendiente->getIdEmpleado(), PDO::PARAM_STR);
+            $consulta->bindValue(':idEmpleado', $pendiente->getIdEmpleado(), PDO::PARAM_STR);
             $consulta->bindValue(':puesto', $pendiente->getPuesto(), PDO::PARAM_STR);
-            $consulta->bindValue(':id_pedido', $pendiente->getIdPedido(), PDO::PARAM_STR);
+            $consulta->bindValue(':idPedido', $pendiente->getIdPedido(), PDO::PARAM_STR);
             $consulta->bindValue(':comida', $pendiente->getComida(), PDO::PARAM_INT);
             $consulta->bindValue(':horaLlegada', $pendiente->getHoraLlegada()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
-            $consulta->bindValue(':Terminado', $pendiente->getTerminado(), PDO::PARAM_STR);
+            $consulta->bindValue(':terminado', $pendiente->getTerminado(), PDO::PARAM_STR);
 
             $consulta->execute();
             echo "Guardado<br>";
     }
 
+    // estado de comida terminada
     public static function cambiarTerminado($idPedido, $comida)
     {
         $objAccesoDato = AccesoDatos::obtenerInstancia();
 
-        $consulta = $objAccesoDato->prepararConsulta("UPDATE pendientes SET Terminado = true WHERE id_pedido = :id_pedido AND comida = :comida");
+        $consulta = $objAccesoDato->prepararConsulta("UPDATE pendientes SET terminado = true WHERE idPedido = :idPedido AND comida = :comida");
 
-        $consulta->bindValue(':id_pedido', $idPedido, PDO::PARAM_STR);
+        $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_STR);
         $consulta->bindValue(':comida', $comida, PDO::PARAM_STR);
         $consulta->execute();
 
@@ -192,7 +184,7 @@ class AltaPendientes
     }
 
     
-
+    //reviso si todas las comidas estan terminadas y retorno true o false
     public static function revisarPendientesTerminados($idPedido)
     {
         //$objAccesoDatos = AccesoDatos::obtenerInstancia();
