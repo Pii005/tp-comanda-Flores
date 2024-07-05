@@ -19,7 +19,7 @@ class AltaPedidos
     public function buscarPedido($id)
     {
         $consulta = $this->acceso->prepararConsulta(
-            "SELECT id, nombreCliente, idMesa, imagen, estadoPedido, tiempoPreparacion, inicioPedido, finalizacionPedido, preparadoEnTiempo
+            "SELECT *
             FROM pedidos
             WHERE id = :id"
         );
@@ -28,70 +28,113 @@ class AltaPedidos
 
         $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
 
-        
         if (count($resultados) > 0) {
             $resultado = $resultados[0];
+            // var_dump($resultado['id']);
             $items = AltaPendientes::buscarPendientes($resultado['id']);
             $pedido = new Pedidos(
+                $resultado['id'],
                 $resultado['nombreCliente'],
                 $resultado['idMesa'],
-                $items, 
+                $resultado['tiempoPreparacion'],
                 $resultado['imagen']
             );
-            $pedido->setID($resultado['id']);
+
+            $pedido->setItems( $items);
             $pedido->setEstadoPedido($resultado['estadoPedido']);
-            $pedido->setTiempoPreparacion($resultado['tiempoPreparacion']);
             $pedido->setInicioPedido(new DateTime($resultado['inicioPedido']));
-            $pedido->setFinalizacionPedido($resultado['finalizacionPedido'] ? new DateTime($resultado['finalizacionPedido']) : null);
+            $pedido->setFinalizacionPedido(new DateTime($resultado['finalizacionPedido']));
             $pedido->setPreparadoEnTiempo($resultado['preparadoEnTiempo']);
+
             return $pedido;
         } else {
             return null;
         }
     }
 
-    public function obtenerTiempo()
+    private function procesarImagen($imagen, $idPedido, $nombreCliente)
     {
-        return new DateTime();
+        $uploadDir = __DIR__ . "/ImagenesClientes/2024/";
+
+        // Crear el directorio si no existe
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        // Obtener el nombre y la extensión del archivo subido
+        if ($imagen instanceof \Slim\Psr7\UploadedFile) {
+            $nombreOriginal = $imagen->getClientFilename();
+            $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
+
+            // Crear un nuevo nombre para la imagen
+            $nombreImagen = $idPedido . "_" . $nombreCliente . "." . $extension;
+            $uploadFile = $uploadDir . $nombreImagen;
+
+            // Mover el archivo subido al directorio de destino
+            $imagen->moveTo($uploadFile);
+
+            return $nombreImagen;
+        } else {
+            throw new InvalidArgumentException("El archivo de imagen no es válido.");
+        }
     }
 
-    
+    public function crearID()
+    {
+        $longitud = 5;
+        $caracteres = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $codigo = '';
+        for ($i = 0; $i < $longitud; $i++) {
+            $codigo .= $caracteres[rand(0, strlen($caracteres) - 1)];
+        }
+        return $codigo;
+    }
     
 
     public function crearNuevo($idMesa, $nombreCliente, $Comidas, $imagen)
     {
         //validar mesa - Que este ocupando la mesa realmente alguien y este en pendiente
+        try{
 
-        $validacionMesa = AltaMesa::validarMesaOcupada($idMesa);
-
-        if($validacionMesa)
-        {
-            // echo "mesa valida <br>";
-            $pedido = new Pedidos($nombreCliente, $idMesa, $Comidas, $imagen);
-            //si es true - mando a pendientes si esta todo correcto
-            $guardadoPendientes = AltaPendientes::ingresoPendientes($pedido->getId(), $Comidas);
-            if($guardadoPendientes)
+            $validacionMesa = AltaMesa::validarMesaOcupada($idMesa);
+    
+            if($validacionMesa)
             {
-                $estadoCambiado = AltaMesa::modificarEstado($idMesa, estadoMesa::pedido);
-                if($estadoCambiado)
+                $idPedido = self::crearID();
+                
+                //si es true - mando a pendientes si esta todo correcto
+                $guardadoPendientes = AltaPendientes::enviarComidas($idPedido, $Comidas);
+                
+                if($guardadoPendientes)
                 {
-                    
-                    $msg = self::crearYGuardar($pedido);
-                    return $msg;
+                    $tiempoPreparacion = AltaComida::sumarTiempos($Comidas);
+                    $rutaImagen = self::procesarImagen($imagen, $idPedido, $nombreCliente);
+                    $pedido = new Pedidos($idPedido, $nombreCliente, $idMesa, $tiempoPreparacion, $rutaImagen);
+
+                    $estadoCambiado = AltaMesa::modificarEstado($idMesa, estadoMesa::pedido);
+                    if($estadoCambiado)
+                    {
+                        
+                        $msg = self::crearYGuardar($pedido);
+                        return $msg;
+                    }
                 }
+                else
+                {
+                    return "No se pudieron guardar los pendientes";
+                }
+                //si esta todo bien, creo el pedido y lo guardo 
+    
             }
             else
             {
-                return "El pedido no se pudo guardar";
+                return "La mesa no esta libre o no esta cargada - Ingrese la mesa";
             }
-            //si esta todo bien, creo el pedido y lo guardo 
-
         }
-        else
+        catch(Exception $e)
         {
-            return "La mesa no esta libre";
+            throw new Exception("error en creanNuevo - AltaPedidos: " . $e->getMessage());
         }
-
     }
 
     public function crearYGuardar($pedido)
@@ -117,9 +160,18 @@ class AltaPedidos
 
     public function mostrarPedido($id)
     {
+        $array = [];
         $pedido = self::buscarPedido($id);
         if ($pedido) {
-            return $pedido->mostrar();
+            $array['pedido'] = $pedido->mostrar();
+
+            $pendientes = AltaPendientes::mostrarPendientes($pedido->getId());
+
+            if ($pendientes) {
+                $array['Pendientes'] = $pendientes;
+            }
+            return $array;
+
         } else {
             return "Pedido no encontrado";
         }
@@ -168,21 +220,26 @@ class AltaPedidos
 
     public function cambiarEstados($idPedido, $estado)
     {
-        if(!in_array($estado, [
-            EstadoPedido::listo,
-            EstadoPedido::servido
-        ]))
+        try
         {
-            throw new InvalidArgumentException("Tipo de estado no valido");
+            if($estado != EstadoPedido::servido && $estado != EstadoPedido::listo &&
+            $estado != EstadoPedido::pagado)
+            {
+                throw new JsonException("Tipo de estado no valido CambiarEstados-AltaPedidos");
+            }
+
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
+
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos SET estadoPedido = :estado WHERE id = :id");
+            $consulta->bindValue(':estado', $estado, PDO::PARAM_STR);
+            $consulta->bindValue(':id', $idPedido, PDO::PARAM_INT);
+            $consulta->execute();
+
         }
-
-        $objAccesoDato = AccesoDatos::obtenerInstancia();
-
-        $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos SET estadoPedido = :estado WHERE id = :id");
-        $consulta->bindValue(':estadoPedido', $estado, PDO::PARAM_STR);
-        $consulta->bindValue(':id', $idPedido, PDO::PARAM_INT);
-        $consulta->execute();
-
+        catch (Exception $e)
+        {
+            throw new JsonException("error en CambiarEstados-AltaPedidos");
+        }
         // echo "Modificado con exito!<br>";
 
     }
@@ -190,25 +247,74 @@ class AltaPedidos
     //reviso si el pedido tiene todos los pendientes terminados o no
     public function pedidoTerminado($idPedido)
     {
-        $pendientesTerminados = AltaPendientes::revisarPendientesTerminados($idPedido);
-        if($pendientesTerminados)
+        try
         {
-            $this->cambiarEstados($idPedido, EstadoPedido::listo);
-            $this->mostrarPedido($idPedido);
-            
-            return "Pedido terminado, Listo para entregar";
+            $pendientesTerminados = AltaPendientes::revisarPendientesTerminados($idPedido);
+            if($pendientesTerminados)
+            {
+                $this->cambiarEstados($idPedido, EstadoPedido::listo);
+                
+                return "Pedido terminado, Listo para entregar";
+            }
+            return "El pedido aun no esta listo";
         }
-        return "El pedido aun no esta listo";
+        catch (Exception $e)
+        {
+            return "Error en los cambios de estado del pedido";
+        }
     }
+
+    
+// 	$fechaInicio = new DateTime("2020-03-09 17:55:15");
+// 	$fechaFin = new DateTime("2022-01-01 17:45:25");
+// 	$intervalo = $fechaInicio->diff($fechaFin);
+
+// 	echo "La diferencia entre  " . $fechaInicio->format('Y-m-d h:i:s') . " y " . $fechaFin->format('Y-m-d h:i:s') . " es de: <br> 
+//   " . $intervalo->h . " horas, " . $intervalo->i . " minutos y " . $intervalo->s . " segundos";  
+
+public function verificarEnTiempo($idPedido, $fin)
+{
+    $pedido = self::buscarPedido($idPedido);
+
+    var_dump("Inicio: ". $pedido->getInicioPedido()->format('Y-m-d H:i:s'));
+    var_dump("estimado: ");
+    var_dump($pedido->getTiempoPreparacion());
+    var_dump("fin: ".$fin->format('Y-m-d H:i:s'));
+
+    $inicio = $pedido->getInicioPedido();
+
+    // Calcula la diferencia entre el inicio y el fin del pedido
+    $diferencia = $inicio->diff($fin);
+
+    // Calcula la diferencia total en segundos
+    $totalSegundos = $diferencia->days * 24 * 60 * 60; // Días a segundos
+    $totalSegundos += $diferencia->h * 60 * 60;        // Horas a segundos
+    $totalSegundos += $diferencia->i * 60;             // Minutos a segundos
+    $totalSegundos += $diferencia->s;                  // Segundos
+
+    $tiempoMinimoSegundos = $pedido->getTiempoPreparacion() * 60;
+
+    if ($totalSegundos <= $tiempoMinimoSegundos) {
+        return false; // fuera del tiempo estimado
+    } 
+    return true; // dentro del tiempo estimado
+}
+
+
 
 
     public function pedidoEntregado($idPedido)
     {
         $pedido = self::buscarPedido($idPedido);
+        self::establecerFinalizar($idPedido);
         if($pedido->getEstadoPedido() == EstadoPedido::listo)
         {
             $this->cambiarEstados($idPedido, EstadoPedido::servido);
-            $this->mostrarPedido($idPedido);
+            
+            //cambiar estadoMesa;
+            AltaMesa::modificarEstado($pedido->getIdMesa(), estadoMesa::comiendo);
+            
+            
             return "Pedido entregado";
         }
         if($pedido->getEstadoPedido() == EstadoPedido::servido 
@@ -218,6 +324,54 @@ class AltaPedidos
         }
         return "El pedido aun no esta listo";
     }
+    
+    function establecerFinalizar($idPedido)
+    {
+        try
+        {
+            $finalizacion = new DateTime();
+            $preparadoEnTiempo = self::verificarEnTiempo($idPedido, $finalizacion);
+
+            // var_dump($finalizacion);
+            // var_dump($preparadoEnTiempo);
+
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
+
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos 
+            SET finalizacionPedido = :finalizacionPedido, preparadoEnTiempo = :preparadoEnTiempo
+            WHERE id = :id");
+            $consulta->bindValue(':id', $idPedido, PDO::PARAM_STR);
+            $consulta->bindValue(':finalizacionPedido', $finalizacion->format('Y-m-d H:i:s'), PDO::PARAM_STR);
+            $consulta->bindValue(':preparadoEnTiempo', $preparadoEnTiempo, PDO::PARAM_STR);
+            $consulta->execute();
+
+        }
+        catch (Exception $e)
+        {
+            throw new JsonException("error en establecerFinalizar-AltaPedidos - ". $e->getMessage());
+        }
+    }
+
+    function cerrarMesa($idPedido)
+    {
+        $pedido = self::buscarPedido($idPedido);
+
+        if($pedido)
+        {
+            if($pedido->getEstadoPedido() != estadoMesa::pagando)
+            {
+                //cambiar estado - pedido
+                $this->cambiarEstados($idPedido, EstadoPedido::pagado);
+                //cambiar estado - mesa
+                AltaMesa::modificarEstado($pedido->getIdMesa(), estadoMesa::pagando);
+                return "Pedido cerrado - retirar dinero";
+            }
+            return "El pedido ya esta cerrado";
+        }
+        return "El pedido no existe";
+
+    }
+
 
 }
 

@@ -137,34 +137,7 @@ class Usuario
         
     }
 
-    // public function verificarPuesto()
-    // {
-    //     if(in_array(self::getPuestouser(),
-    //     [
-    //         TiposEmpleados::bartender,
-    //         TiposEmpleados::cervecero,
-    //         TiposEmpleados::cocinero,
-    //         TiposEmpleados::mozo,
-    //         TiposEmpleados::socio,
-    //         TiposEmpleados::administrador
-    //     ]))
-    //     {
-    //         // echo "bien";
-    //         return true;
-    //     }else{
-    //         // echo "no " . self::getPuestouser();
-    //         return false;
-    //     }
-    // }
 
-    /*public static function obtenerTodos()
-    {
-        $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT * FROM empleados");
-        $consulta->execute();
-
-        return $consulta->fetchAll(PDO::FETCH_CLASS, 'Empleado');
-    }*/
 
     public static function obtenerUsuario($email)
     {

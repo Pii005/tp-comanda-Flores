@@ -20,14 +20,14 @@ class Pedidos
     private $preparadoEnTiempo; //default en null y cuando llego a finalizacion se asigna true o false
 
 
-    public function __construct($nombre,$idMesa, $items, $imagen)
+    public function __construct($id ,$nombre,$idMesa, $tiempoPreparacion, $imagen)
     {
-        $this->id = $this->crearID();
+        $this->id = $id;
         $this->idMesa = $idMesa;
         $this->nombreCliente = $nombre;
         $this->inicioPedido =  $this->obtenerTiempo();
-        $this->imagen = $this->procesarImagen($imagen);
-        $this->tiempoPreparacion =  $this->obtenerTiempoPreparacion($items);
+        $this->imagen = $imagen;
+        $this->tiempoPreparacion =  $tiempoPreparacion;
         $this->estadoPedido = EstadoPedido::preparando;
         
     }
@@ -42,85 +42,35 @@ class Pedidos
         return AltaComida::sumarTiempos($Comidas);
     }
 
-    public function verificarEnTiempo($inicio, $fin)
-    {
-        if ($this->finalizacionPedido) {
-            
-            $diferencia = $inicio->diff($fin);//DateInterval: calcula la diferencia entre los dos objetos 
-            $diferenciaEnMinutos = $diferencia->days * 24 * 60;//convierte el número de días en minutos multiplicando (24) y luego los minutos
-            $diferenciaEnMinutos += $diferencia->h * 60;//convierte el número de horas
-            $diferenciaEnMinutos += $diferencia->i;//suma el número de minutos
-
-            if ($diferenciaEnMinutos <= $this->tiempoPreparacion) {//Compara la diferencia total en minutos
-                $this->preparadoEnTiempo = true;
-            } else {
-                $this->preparadoEnTiempo = false;
-            }
-        } else {
-            $this->preparadoEnTiempo = false;
-        }
-        return $this->preparadoEnTiempo;
-    }
-
-    public function crearID()
-    {
-        $longitud = 5;
-        $caracteres = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $codigo = '';
-        for ($i = 0; $i < $longitud; $i++) {
-            $codigo .= $caracteres[rand(0, strlen($caracteres) - 1)];
-        }
-        return $codigo;
-    }
-
-    private function procesarImagen($imagen)
-    {
-        $uploadDir = __DIR__ . "/ImagenesClientes/2024/";
-        
-        // Crear el directorio si no existe
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        // Obtener el nombre y la extensión del archivo subido
-        $nombreOriginal = $imagen->getClientFilename();
-        $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
-
-        // Crear un nuevo nombre para la imagen
-        $nombreImagen = $this->getId() . "_" . $this->getNombreCliente() . "." . $extension;
-        $uploadFile = $uploadDir . $nombreImagen;
-
-        // Mover el archivo subido al directorio de destino
-        $imagen->moveTo($uploadFile);
-
-        return $nombreImagen;
-    }
-
-    
-
     public function mostrar()
-{
-    $datos = [
-        'ID' => $this->id,
-        'Nombre del Cliente' => $this->nombreCliente,
-        'ID de la Mesa' => $this->idMesa,
-        'ruta de foto' => $this->imagen,
-        // 'Imagen' => "<img src='" . $this->imagen . "' alt='Imagen del pedido'>",
-        'Estado del Pedido' => $this->estadoPedido,
-        'Tiempo de Preparación' => $this->tiempoPreparacion . " minutos",
-        'Inicio del Pedido' => $this->inicioPedido->format('Y-m-d H:i:s'),
-        'Finalización del Pedido' => $this->finalizacionPedido ? $this->finalizacionPedido->format('Y-m-d H:i:s') : "N/A",
-        'Preparado en Tiempo' => $this->preparadoEnTiempo ? true : false,
-    ];
+    {
+        $datos = [
+            'ID' => $this->id,
+            'Nombre del Cliente' => $this->nombreCliente,
+            'ID de la Mesa' => $this->idMesa,
+            'ruta de foto' => $this->imagen,
+            'Estado del Pedido' => $this->estadoPedido,
+            'Tiempo de Preparación' => $this->tiempoPreparacion . " minutos",
+            'Inicio del Pedido' => $this->inicioPedido->format('Y-m-d H:i:s'),
+        ];
+        if($this->finalizacionPedido->format('Y-m-d H:i:s') != "-0001-11-30 00:00:00")
+        {
+            $datos['Finalización del Pedido'] = $this->finalizacionPedido->format('Y-m-d H:i:s');
+        }
+        
+        if($this->preparadoEnTiempo != false)
+        {
+            $datos['Preparado en Tiempo'] = $this->preparadoEnTiempo ? true : false;
+        }
+        
+        // $pendientes = AltaPendientes::mostrarPendientes($this->id);
 
-    // Asumiendo que AltaPendientes::mostrarPendientes($this->id) retorna un array
-    $pendientes = AltaPendientes::mostrarPendientes($this->id);
-    if ($pendientes) {
-        $datos['Pendientes'] = $pendientes;
+        // if ($pendientes) {
+        //     $datos['Pendientes'] = $pendientes;
+        // }
+
+        return $datos;
     }
-
-    return $datos;
-}
 
 
     public function getId() 
@@ -144,8 +94,9 @@ class Pedidos
     public function getItems() {
         return $this->items;
     }
-    public function getTiempoPreparacion() { 
-        return $this->tiempoPreparacion;
+    public function getTiempoPreparacion()
+    {
+        return (int) $this->tiempoPreparacion;
     }
     public function getInicioPedido() { 
         return $this->inicioPedido; 
@@ -184,7 +135,9 @@ class Pedidos
         $this->imagen = $imagen;
     }
 
-
+    public function setItems($a) { 
+        $this->items = $a;
+    }
 
 }
 

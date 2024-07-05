@@ -22,6 +22,7 @@ require_once './controllers/UsuarioController.php';
 require_once './middlewares/mddUsuarios.php';
 require_once './middlewares/mddEstadosPedidos.php';
 require_once './controllers/controlerPedidos.php';
+require_once './controllers/controlerCerrarPedido.php';
 
 // Load ENV
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -61,6 +62,7 @@ $app->group('/pedidos', function (RouteCollectorProxy $group)
   $group->post('/modificar', \ControlerPedidos::class . ':modificarPedido');
   $group->post('/terminar', \ControlerPedidos::class . ':terminarPendiente');
   $group->post('/entregar', \ControlerPedidos::class . ':entregarPedido');
+  $group->post('/cerrar', \ControlerCerrarPedido::class . ':cerrarPedido'); //MDD si el usuario tiene permiso
 });
 
 
@@ -87,3 +89,19 @@ $app->get('[/]', function (Request $request, Response $response) {
 });
 
 $app->run();
+
+
+// date_default_timezone_set('America/Mexico_City');		
+
+// 	$fechaInicio = new DateTime("2020-03-09 17:55:15");
+// 	$fechaFin = new DateTime("2022-01-01 17:45:25");
+// 	$intervalo = $fechaInicio->diff($fechaFin);
+
+// 	echo "La diferencia entre  " . $fechaInicio->format('Y-m-d h:i:s') . " y " . $fechaFin->format('Y-m-d h:i:s') . " es de: <br> 
+//   " . $intervalo->h . " horas, " . $intervalo->i . " minutos y " . $intervalo->s . " segundos";  
+
+
+
+
+
+

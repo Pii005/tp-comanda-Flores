@@ -15,7 +15,28 @@ class AltaPendientes
         $consulta = $objAccesoDatos->prepararConsulta("SELECT * FROM pendientes");
         $consulta->execute();
 
-        return $consulta->fetchAll(PDO::FETCH_CLASS, 'Pendientes');
+        $Pendientes =  $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+        $pendientesArray = [];
+
+        if($Pendientes)
+        {
+            foreach($Pendientes as $pendiente)
+            {
+                $pendienteNew = new Pendientes(
+                    $pendiente['idEmpleado'],
+                    $pendiente['puesto'],
+                    $pendiente['idPedido'],
+                    $pendiente['comida'],
+                );
+                $pendienteNew->setHoraLlegada(new DateTime($pendiente['horaLlegada']));
+                $pendienteNew->setTerminado($pendiente['terminado']);
+
+                $pendientesArray[] = $pendienteNew;
+            }
+            return $pendientesArray;
+        }
+        return null;
     
     }
 
@@ -25,17 +46,44 @@ class AltaPendientes
         $consulta = $objAccesoDatos->prepararConsulta("SELECT * FROM pendientes WHERE idPedido = :idPedido");
         $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_STR);
         $consulta->execute();
-        return $consulta->fetchAll(PDO::FETCH_CLASS, 'Pendientes');
+        $Pendientes =  $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+        $pendientesArray = [];
+
+        if($Pendientes)
+        {
+            foreach($Pendientes as $pendiente)
+            {
+                $pendienteNew = new Pendientes(
+                    $pendiente['idEmpleado'],
+                    $pendiente['puesto'],
+                    $pendiente['idPedido'],
+                    $pendiente['comida'],
+                );
+                $pendienteNew->setHoraLlegada(new DateTime($pendiente['horaLlegada']));
+                $pendienteNew->setTerminado($pendiente['terminado']);
+
+                $pendientesArray[] = $pendienteNew;
+            }
+            return $pendientesArray;
+        }
+        return null;
     }
+
 
 
     public static function mostrarPendientes($idPedido)
     {
+        $dataPendientes = [];
         $pendientes = self::buscarPendientes($idPedido);
-        if ($pendientes) {
+
+        if ($pendientes != null) {
             foreach ($pendientes as $pendiente) {
-                return $pendiente->Mostrar();
+                // var_dump($pendiente->getComida());
+                $comidas[] = $pendiente->Mostrar();
             }
+            $dataPendientes['comidas'] = $comidas; // Guarda todas las comidas en un array
+            return $dataPendientes;
         } else {
             return "No se encontraron pendientes para el pedido con ID: $idPedido";
         }
@@ -45,13 +93,17 @@ class AltaPendientes
     {
         $conteoEmpleados = [];
 
+        // Obtener las asignaciones pendientes
         $pendientes = self::ObtenerPendientes();
-        var_dump($pendientes); // Depuración: verifica los pendientes
+        var_dump("linea: 96: "); // Verifica que los pendientes se obtienen correctamente
 
-        if ($pendientes != null && count($pendientes) > 1) {
+        // Si hay más de un pendiente
+        if ($pendientes != null && count($pendientes) > 0) { // Cambiar a > 0 para incluir un solo pendiente
             foreach ($pendientes as $pendiente) {
-                if ($pendiente['puesto'] === $puesto) {
-                    $idEmpleado = $pendiente['idEmpleado'];
+                // Asegúrate de que muestra los valores correctos
+                if ($pendiente->getPuesto() === $puesto) {
+                    $idEmpleado = $pendiente->getIdEmpleado();
+                    var_dump("linea: 104: ". $idEmpleado); // Verifica que el ID del empleado sea correcto
 
                     if (!isset($conteoEmpleados[$idEmpleado])) {
                         $conteoEmpleados[$idEmpleado] = 0;
@@ -59,63 +111,62 @@ class AltaPendientes
                     $conteoEmpleados[$idEmpleado]++;
                 }
             }
-
-            var_dump($conteoEmpleados); // Depuración: verifica el conteo de empleados
-
+            var_dump("linea: 112: "); // Verifica el conteo de asignaciones
+            var_dump($conteoEmpleados);
             $empleadoMenosAsignado = null;
             $minAsignaciones = PHP_INT_MAX;
-
-            foreach ($conteoEmpleados as $idEmpleado => $cantidadAsignaciones) {
-                if ($cantidadAsignaciones < $minAsignaciones) {
-                    $minAsignaciones = $cantidadAsignaciones;
-                    $empleadoMenosAsignado = $idEmpleado;
-                }
-            }
-
-            var_dump($empleadoMenosAsignado); // Depuración: verifica el empleado menos asignado
-            return $empleadoMenosAsignado;
-        } else {
-            $empleados = Usuario::buscarPuesto($puesto);
-            var_dump($empleados); // Depuración: verifica los empleados
-
-            if ($empleados && count($empleados) > 0) {
-                foreach ($empleados as $emple) {
-                    if ($emple->getPuestouser() == $puesto) {
-                        return $emple->getid();
+            
+            if(count($conteoEmpleados) != 0)
+            {
+                var_dump("Entro aca");
+                foreach ($conteoEmpleados as $idEmpleado => $cantidadAsignaciones) {
+                    if ($cantidadAsignaciones < $minAsignaciones) {
+                        $minAsignaciones = $cantidadAsignaciones;
+                        $empleadoMenosAsignado = $idEmpleado;
                     }
                 }
+                var_dump("linea: 124: ".$empleadoMenosAsignado); // Verifica el ID del empleado menos asignado
+                return $empleadoMenosAsignado;
+            }else
+            {
+                var_dump("Entro aca x2");
+                return self::buscarEmpleado($puesto);
             }
+
+            // Encontrar el empleado con el menor número de asignaciones
+        } else {
+            // Si no hay pendientes o solo hay uno, buscar empleados con el puesto especificado
+            return self::buscarEmpleado($puesto);
         }
         return null;
     }
 
-
-
-
-
-    public static function ingresoPendientes($idPedido, $items)
+    static function buscarEmpleado($puesto)
     {
-        $comidasValidas = self::validarComidas($items);
-        if($comidasValidas)
-        {
-            
-            self::enviarComidas($idPedido, $items);
+        $empleados = Usuario::buscarPuesto($puesto);
+        // var_dump("linea: 129: ".$empleados); // Verifica que los empleados se obtienen correctamente
 
-            return true;
+        if ($empleados && count($empleados) > 0) {
+            var_dump("Tiene usuarios");
+            foreach ($empleados as $emple) {
+                var_dump($emple->getPuestouser());
+                if ($emple->getPuestouser() == $puesto) {
+                    var_dump("id: " . $emple->getid());
+                    return $emple->getid();
+                }
+            }
         }
-        else
-        {
-            return false;
-        }   
     }
+
 
     public static function validarComidas($items)
     {
         foreach($items as $c)
         {
-            if(!(AltaComida::buscarComida($c)))
+            // var_dump(".".$c.".");
+            if(!(AltaComida::buscarComida($c)))//Si me da false
             {
-                return false;
+                return false;//La comida no es correcta
             }
         }
         return true;//todas las comidas estan bien ingresadas
@@ -125,31 +176,47 @@ class AltaPendientes
     public static function enviarComidas($idPedido, $items)
     {
         //Leo los items
-        foreach($items as $comida)
+        $comidasValidas = self::validarComidas($items);
+        // var_dump("verificando comidas...");
+        if($comidasValidas)
         {
-            $puesto = AltaComida::devolverPuesto($comida);
-            // var_dump($puesto, $idPedido, $comida);
-            if($puesto != null)
+            var_dump("comidas validas");
+            try
             {
-                $idEmpleado = self::buscarMenosAsignado($puesto);
-                var_dump("Cargando...");
-                if($idEmpleado != null)
+                foreach($items as $comida)
                 {
-                    var_dump("Entro");
-                    // $pendiente = new Pendientes($idEmpleado, $puesto, $idPedido, $comida);
-                    // self::guardarPendiente($pendiente);
-                    throw new InvalidArgumentException("ENTRO!!!");
-
-                }else
-                {
-                    throw new InvalidArgumentException("El id del empleado es nulo<br>");
-                    
+                    var_dump($comida);
+                    $puesto = AltaComida::devolverPuesto($comida);
+                    // var_dump($puesto, $idPedido, $comida);
+                    if($puesto != null)
+                    {
+                        $idEmpleado = self::buscarMenosAsignado($puesto);
+                        var_dump("Id empleado: ".$idEmpleado);
+                        if($idEmpleado != null)
+                        {
+                            // var_dump("Entro");
+                            $pendiente = new Pendientes($idEmpleado, $puesto, $idPedido, $comida);
+                            self::guardarPendiente($pendiente);
+                            // throw new InvalidArgumentException("ENTRO!!!");
+                        }else
+                        {
+                            throw new InvalidArgumentException("El id del empleado es nulo");
+                            
+                        }
+                    }
+                    else{
+                        throw new InvalidArgumentException("Error al guardar pendiente" . " - " . $puesto . ": la comida " . $comida);
+                    }
                 }
+                return true;
+            }catch(Exception $e)
+            {
+                throw new ErrorException("error al guardar pendiente - enviarComidas - " . $e->getMessage());
             }
-            else{
-                throw new InvalidArgumentException("Error al guardar pendiente" . " - " . $puesto . ": la comida " . $comida);
-            }
+            
         }
+        var_dump("comidas no validas...");
+        return false;
     }
 
     public static function guardarPendiente($pendiente)
@@ -172,15 +239,23 @@ class AltaPendientes
     // estado de comida terminada
     public static function cambiarTerminado($idPedido, $comida)
     {
-        $objAccesoDato = AccesoDatos::obtenerInstancia();
+        try
+        {
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
 
-        $consulta = $objAccesoDato->prepararConsulta("UPDATE pendientes SET terminado = true WHERE idPedido = :idPedido AND comida = :comida");
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE pendientes SET terminado = true 
+            WHERE idPedido = :idPedido AND comida = :comida");
 
-        $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_STR);
-        $consulta->bindValue(':comida', $comida, PDO::PARAM_STR);
-        $consulta->execute();
+            $consulta->bindValue(':idPedido', $idPedido, PDO::PARAM_STR);
+            $consulta->bindValue(':comida', $comida, PDO::PARAM_STR);
+            $consulta->execute();
 
-        echo "Comida cambiada a terminada con exito<br>";
+            return true;
+
+        }catch (Exception $e)
+        {
+            return false;
+        }
     }
 
     
@@ -192,16 +267,19 @@ class AltaPendientes
         $pendientes = self::buscarPendientes($idPedido);
         $cantidadPendientes = count($pendientes);
         $terminados = 0;
-
-        foreach($pendientes as $pendiente)
+        if($pendientes != null)
         {
-            if($pendiente->getTerminado() == true)
+            foreach($pendientes as $pendiente)
             {
-                $terminados ++;
+                if($pendiente->getTerminado() == true)
+                {
+                    $terminados ++;
+                }
             }
-        }
 
-        return $cantidadPendientes == $terminados;
+            return $cantidadPendientes == $terminados;
+        }
+        return false;
     }
 
 }

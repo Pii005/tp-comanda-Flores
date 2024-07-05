@@ -138,13 +138,13 @@ class AltaMesa
 
         if($mesa != null)//Mesa existe
         {
-            if($mesa['estado'] == estadoMesa::esperando)//esta siendo ocupada y estan esperando
+            if($mesa['estado'] == estadoMesa::cerrada || $mesa['estado'] == estadoMesa::esperando)//esta siendo ocupada y estan esperando
             {
-                return true;
+                return true;//La mesa esta libre
             }
-            
+
         }
-        return false;
+        return false;//mesa ocupada
 
     }
 

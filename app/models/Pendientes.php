@@ -18,14 +18,10 @@ class Pendientes
         $this->puesto = $puesto;
         $this->idPedido = $idPedido;
         $this->comida = $comida;
-        $this->horaLlegada = $this->obtenerTiempo();
+        $this->horaLlegada = new DateTime();
         $this->terminado = false;
     }
 
-    public function obtenerTiempo()
-    {
-        return new DateTime();
-    }
 
     public function Mostrar()
     {

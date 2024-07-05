@@ -16,7 +16,8 @@ class ControlerPedidos
 
             $idMesa = $parametros['idMesa'];
             $nombre = $parametros['nombre'];
-            $comidas = explode(',', $parametros['comidas']); // Suponiendo que las comidas se envían como una cadena separada por comas
+            $comidas = str_getcsv($parametros['comidas']); 
+            $comidas = array_map('trim', $comidas);
             $imagen = $Archivo["imagen"];
             
             try
@@ -28,7 +29,7 @@ class ControlerPedidos
             }
             catch(Exception $e)
             {
-                $payload = json_encode(array("Error" => "No se pudo guardar el pedido"));
+                $payload = json_encode(array("Error" => "No se pudo guardar el pedido - " . $e->getMessage()));
             }
         }
         else 
@@ -44,6 +45,7 @@ class ControlerPedidos
     public function mostrarPedido($request, $response, $args)
     {
         $params = $request->getQueryParams();
+        $payload = ""; // Inicializar la variable $payload
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET')
         {
@@ -52,8 +54,10 @@ class ControlerPedidos
                 try
                 {
                     $pedido = new AltaPedidos();
-                    $pedido->mostrarPedido($params["idPedido"]);
-                }catch(Exception $e)
+                    $msg = $pedido->mostrarPedido($params["idPedido"]);
+                    $payload = json_encode($msg);
+                }
+                catch(Exception $e)
                 {
                     $payload = json_encode(array("Error" => "No se encontro el pedido"));
                 }
@@ -62,7 +66,8 @@ class ControlerPedidos
             {
                 $payload = json_encode(array("Error" => "Parametros no validos"));
             }
-        }else
+        }
+        else
         {
             $payload = json_encode(array("Error" => "No se logro la conexion"));
         }
@@ -149,13 +154,19 @@ class ControlerPedidos
 
             try
             {
-                AltaPendientes::cambiarTerminado($idPedido, $comida);//cambio estado
-
-                //reviso si ya se puede cerrar el pedido
-                $pedido = new AltaPedidos();
-                $msg = $pedido->pedidoTerminado($idPedido);
-
-                $payload = json_encode(array("mensaje" => $msg));
+                $terminado = AltaPendientes::cambiarTerminado($idPedido, $comida);//cambio estado
+                
+                if($terminado)
+                {
+                    $pedido = new AltaPedidos();
+                    $msg = $pedido->pedidoTerminado($idPedido);
+    
+                    $payload = json_encode(array("mensaje" => $msg));
+                }
+                else
+                {
+                    $payload = json_encode(array("Error" => "No se logro cambiar el estado"));
+                }
             }catch(Exception $e)
             {
                 $payload = json_encode(array("Error" => "No se pudo terminar el pendiente"));
@@ -186,7 +197,7 @@ class ControlerPedidos
                 $payload = json_encode(array("mensaje" => $msg));
             }catch(Exception $e)
             {
-                $payload = json_encode(array("Error" => "No se pudo entregar el pedido"));
+                $payload = json_encode(array("Error" => "No se pudo entregar el pedido - " . $e->getMessage()));
             }
         }
         else 

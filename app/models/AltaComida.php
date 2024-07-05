@@ -46,14 +46,22 @@ class AltaComida
     }
 
     public static function buscarComida($nombre)
-    {
-        self::obtenerAcceso();
-        $consulta = self::$acceso->prepararConsulta("SELECT nombre FROM comidas WHERE nombre = :nombre");
-        $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
-        $consulta->execute();
-        $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
-        return count($resultados) > 0;
-    }
+{
+    self::obtenerAcceso();
+    $consulta = self::$acceso->prepararConsulta(
+        "SELECT nombre FROM comidas WHERE nombre = :nombre");
+    $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
+    $consulta->execute();
+
+    $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
+    if (count($resultados) > 0) {
+        return true;
+    }  
+        
+    return false;
+}
+
+
 
     public static function devolverComida($nombre)
     {
@@ -64,7 +72,19 @@ class AltaComida
             $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
             $consulta->execute();
             $comida = $consulta->fetch(PDO::FETCH_ASSOC);
-            return $comida;
+
+            if($comida)
+            {
+                $comidaNew = new Comidas(
+                    $comida['nombre'],
+                    $comida['tipoEmpleado'],
+                    $comida['precio'],
+                    $comida['tiempoPreparacion']
+                );
+                return $comidaNew;
+            }
+            return null;
+
         } else {
             // echo "Comida no encontrada<br>";
             return null;
@@ -76,7 +96,7 @@ class AltaComida
         $Comida = self::devolverComida($nombreComida);
         if($Comida != null)
         {
-            return $Comida['tipoEmpleado'];
+            return $Comida->getTipoEmpleado();
         }
         return null;
     }
@@ -88,7 +108,7 @@ class AltaComida
         foreach ($comidasArray as $nombreComida) {
             $comida = self::devolverComida($nombreComida);
             if ($comida != null) {
-                $tiempoPreparacion = $comida['tiempoPreparacion']; // Tiempo en formato HH:MM:SS
+                $tiempoPreparacion = $comida->getTiempoPreparacion(); // Tiempo en formato HH:MM:SS
 
                 // Convertir tiempo de preparación a segundos
                 list($horas, $minutos, $segundos) = explode(':', $tiempoPreparacion);
@@ -149,14 +169,8 @@ class AltaComida
     {
         $comida = self::devolverComida($nombre);
         if ($comida) {
-            $comidaObj = new Comidas(
-                $comida['nombre'],
-                $comida['tipoEmpleado'],
-                $comida['precio'],
-                $comida['tiempoPreparacion'],
-                $comida['id']
-            );
-            return $comidaObj->mostrar();
+
+            return $comida->mostrar();
         } else {
             return "Comida no encontrada";
         }
