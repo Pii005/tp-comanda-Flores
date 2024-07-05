@@ -209,6 +209,33 @@ class ControlerPedidos
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+    public function mostrarPendientePuesto($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+
+        if (isset($parametros['puesto']))
+        {
+            $puesto = $parametros['puesto'];
+
+            try
+            {
+                $pedido = new AltaPendientes();
+                $msg = $pedido->mostrarPendientePuesto($puesto);
+
+                $payload = json_encode(array("mensaje" => $msg));
+            }catch(Exception $e)
+            {
+                $payload = json_encode(array("Error" => "No se pudo entregar el pedido - " . $e->getMessage()));
+            }
+        }
+        else 
+        {
+            $payload = json_encode(array("Error" => "Parametros no validos"));
+        }
+        $response->getBody()->write($payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 
 }
 

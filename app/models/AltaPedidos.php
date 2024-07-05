@@ -6,6 +6,7 @@ include_once  ".\models\AltaComida.php";
 include_once "./models/AltaMesa.php";
 include_once "./models/AltaPendientes.php";
 include_once "./Enumerados/estadoMesa.php";
+include_once './Enumerados/estadoPedido.php';
 
 class AltaPedidos
 {
@@ -139,24 +140,21 @@ class AltaPedidos
 
     public function crearYGuardar($pedido)
     {
-            $consulta = $this->acceso->prepararConsulta("INSERT INTO pedidos
-            (id, nombreCliente, idMesa, imagen, estadoPedido, tiempoPreparacion, inicioPedido)
-            VALUES (:id, :nombreCliente, :idMesa, :imagen, :estadoPedido, :tiempoPreparacion, :inicioPedido)");//Query
+        $consulta = $this->acceso->prepararConsulta("INSERT INTO pedidos
+        (id, nombreCliente, idMesa, imagen, estadoPedido, tiempoPreparacion, inicioPedido)
+        VALUES (:id, :nombreCliente, :idMesa, :imagen, :estadoPedido, :tiempoPreparacion, :inicioPedido)");//Query
 
-            $consulta->bindValue(':id', $pedido->getId(), PDO::PARAM_STR);
-            $consulta->bindValue(':nombreCliente', $pedido->getNombreCliente(), PDO::PARAM_STR);
-            $consulta->bindValue(':idMesa', $pedido->getIdMesa(), PDO::PARAM_STR);
-            $consulta->bindValue(':imagen', $pedido->getImagen(), PDO::PARAM_STR);
-            $consulta->bindValue(':estadoPedido', $pedido->getEstadoPedido(), PDO::PARAM_STR);
-            $consulta->bindValue(':tiempoPreparacion', $pedido->getTiempoPreparacion(), PDO::PARAM_STR);
-            $consulta->bindValue(':inicioPedido', $pedido->getInicioPedido()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
-            $consulta->execute();
+        $consulta->bindValue(':id', $pedido->getId(), PDO::PARAM_STR);
+        $consulta->bindValue(':nombreCliente', $pedido->getNombreCliente(), PDO::PARAM_STR);
+        $consulta->bindValue(':idMesa', $pedido->getIdMesa(), PDO::PARAM_STR);
+        $consulta->bindValue(':imagen', $pedido->getImagen(), PDO::PARAM_STR);
+        $consulta->bindValue(':estadoPedido', $pedido->getEstadoPedido(), PDO::PARAM_STR);
+        $consulta->bindValue(':tiempoPreparacion', $pedido->getTiempoPreparacion(), PDO::PARAM_STR);
+        $consulta->bindValue(':inicioPedido', $pedido->getInicioPedido()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
+        $consulta->execute();
 
-            return "Pedido guardado con exito";
+        return "Pedido guardado con exito";
     }
-
-    
-
 
     public function mostrarPedido($id)
     {
@@ -244,7 +242,7 @@ class AltaPedidos
 
     }
 
-    //reviso si el pedido tiene todos los pendientes terminados o no
+
     public function pedidoTerminado($idPedido)
     {
         try
@@ -264,53 +262,34 @@ class AltaPedidos
         }
     }
 
-    
-// 	$fechaInicio = new DateTime("2020-03-09 17:55:15");
-// 	$fechaFin = new DateTime("2022-01-01 17:45:25");
-// 	$intervalo = $fechaInicio->diff($fechaFin);
+    public function verificarEnTiempo($idPedido, $fin)
+    {
+        $pedido = self::buscarPedido($idPedido);
 
-// 	echo "La diferencia entre  " . $fechaInicio->format('Y-m-d h:i:s') . " y " . $fechaFin->format('Y-m-d h:i:s') . " es de: <br> 
-//   " . $intervalo->h . " horas, " . $intervalo->i . " minutos y " . $intervalo->s . " segundos";  
+        $inicio = $pedido->getInicioPedido();
 
-public function verificarEnTiempo($idPedido, $fin)
-{
-    $pedido = self::buscarPedido($idPedido);
+        $diferencia = $inicio->diff($fin);
 
-    var_dump("Inicio: ". $pedido->getInicioPedido()->format('Y-m-d H:i:s'));
-    var_dump("estimado: ");
-    var_dump($pedido->getTiempoPreparacion());
-    var_dump("fin: ".$fin->format('Y-m-d H:i:s'));
+        $totalSegundos = $diferencia->days * 24 * 60 * 60; // Días a segundos
+        $totalSegundos += $diferencia->h * 60 * 60;        // Horas a segundos
+        $totalSegundos += $diferencia->i * 60;             // Minutos a segundos
+        $totalSegundos += $diferencia->s;                  // Segundos
 
-    $inicio = $pedido->getInicioPedido();
+        $tiempoMinimoSegundos = $pedido->getTiempoPreparacion() * 60;
 
-    // Calcula la diferencia entre el inicio y el fin del pedido
-    $diferencia = $inicio->diff($fin);
-
-    // Calcula la diferencia total en segundos
-    $totalSegundos = $diferencia->days * 24 * 60 * 60; // Días a segundos
-    $totalSegundos += $diferencia->h * 60 * 60;        // Horas a segundos
-    $totalSegundos += $diferencia->i * 60;             // Minutos a segundos
-    $totalSegundos += $diferencia->s;                  // Segundos
-
-    $tiempoMinimoSegundos = $pedido->getTiempoPreparacion() * 60;
-
-    if ($totalSegundos <= $tiempoMinimoSegundos) {
-        return false; // fuera del tiempo estimado
-    } 
-    return true; // dentro del tiempo estimado
-}
-
-
-
+        if ($totalSegundos <= $tiempoMinimoSegundos) {
+            return false; // fuera del tiempo estimado
+        } 
+        return true; // dentro del tiempo estimado
+    }
 
     public function pedidoEntregado($idPedido)
     {
         $pedido = self::buscarPedido($idPedido);
-        self::establecerFinalizar($idPedido);
         if($pedido->getEstadoPedido() == EstadoPedido::listo)
         {
             $this->cambiarEstados($idPedido, EstadoPedido::servido);
-            
+            self::establecerFinalizar($idPedido);
             //cambiar estadoMesa;
             AltaMesa::modificarEstado($pedido->getIdMesa(), estadoMesa::comiendo);
             
@@ -332,9 +311,6 @@ public function verificarEnTiempo($idPedido, $fin)
             $finalizacion = new DateTime();
             $preparadoEnTiempo = self::verificarEnTiempo($idPedido, $finalizacion);
 
-            // var_dump($finalizacion);
-            // var_dump($preparadoEnTiempo);
-
             $objAccesoDato = AccesoDatos::obtenerInstancia();
 
             $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos 
@@ -352,7 +328,7 @@ public function verificarEnTiempo($idPedido, $fin)
         }
     }
 
-    function cerrarMesa($idPedido)
+    function cerrarPedido($idPedido)//cierra pedido pero no la mesa
     {
         $pedido = self::buscarPedido($idPedido);
 
@@ -371,6 +347,23 @@ public function verificarEnTiempo($idPedido, $fin)
         return "El pedido no existe";
 
     }
+
+    public function obtenerTiempoPreparacion($idPedido)
+    {
+        $pedido = self::buscarPedido($idPedido);
+
+        if($pedido){
+            $data = [
+                'Inicio del pedido' => $pedido->getInicioPedido(),
+                'Tiempo de preparacion' => $pedido->getTiempoPreparacion()
+            ];
+            return $data;
+        }else{
+            return "EL pedido no existe";
+        }
+    }
+
+
 
 
 }

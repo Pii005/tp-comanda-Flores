@@ -35,7 +35,7 @@ class Usuario
             "Ingreso" => $this->alta
         );
         
-        if($this-> baja == "0000-00-00")
+        if($this-> baja != "0000-00-00")
         {
             $data["Baja"] =  $this->baja;
         }
@@ -47,11 +47,7 @@ class Usuario
         $empleado = self::obtenerUsuario($email);
         if($empleado)
         {
-            $obj = new Usuario($empleado['nombre'], $empleado['apellido'], $empleado['puesto'], 
-            $empleado['clave'], $empleado['Email']);
-            $obj->setId($empleado['id']);
-            $obj->setAlta($empleado['ingreso']);
-            return $obj->Mostrar();
+            return $empleado->Mostrar();
         }
         return false;
     }
@@ -142,12 +138,29 @@ class Usuario
     public static function obtenerUsuario($email)
     {
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT id, nombre, apellido, puesto, ingreso, baja, clave, Email
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT *
         FROM empleados WHERE Email = :Email");
         $consulta->bindValue(':Email', $email, PDO::PARAM_STR);
         $consulta->execute();
         
-        return $consulta->fetch(PDO::FETCH_ASSOC);
+        $user = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        if($user)
+        {
+            $userNew = new Usuario(
+                $user['nombre'],
+                $user['apellido'],
+                $user['puesto'],
+                $user['clave'],
+                $user['Email']
+            );
+
+            $userNew->setId($user['id']);
+            $userNew->setAlta($user['ingreso']);
+            $userNew->setBaja($user['baja']);
+            return $userNew;
+        }
+        return null;
     }
 
     public static function verificarBaja($email)
@@ -156,11 +169,10 @@ class Usuario
 
         if($user)
         {
-            if($user['baja'] == "0000-00-00")
+            if($user->getBaja() == "0000-00-00")
             {   
                 return true;
             }
-            
         }
         return false;
     }
@@ -245,7 +257,7 @@ class Usuario
         return $this->apellido;
     }
 
-    public function getPuestouser()
+    public function getPuesto()
     {
         return $this->puesto;
     }
@@ -273,6 +285,10 @@ class Usuario
     public function setAlta($a)
     {
         $this->alta = $a;
+    }
+    public function setbaja($a)
+    {
+        $this->baja = $a;
     }
 
     public function setId($a)

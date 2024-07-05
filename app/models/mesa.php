@@ -30,7 +30,7 @@ class mesa
         "Hora llegada" => $this->horaLlegada,
     );
 
-    if ($this->horaSalida != "0000-00-00 00:00:00") {
+    if ($this->horaSalida != "0000-00-00 00:00:00" && $this->horaSalida != null) {
         $data["Hora que el cliente se fue"] = $this->horaSalida;
     }
     if ($this->socioCerro != null) {

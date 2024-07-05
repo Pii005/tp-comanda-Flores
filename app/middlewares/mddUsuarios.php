@@ -28,19 +28,18 @@ class verificacionUsuarioMW
                 TiposEmpleados::administrador
             ]))
             {
-                $response = $handler->handle($request);
+                return $handler->handle($request);
             }
             else
             {
                 $payload = json_encode(array("Error" => "Puesto no valido"));
-                $response->getBody()->write($payload);
             }
         }else
         {
             $payload = json_encode(array("Error" => "parametros no validos"));
-            $response->getBody()->write($payload);
         }
-
+        
+        $response->getBody()->write($payload);
         return $response->withHeader('Content-Type', 'application/json');
     }
 

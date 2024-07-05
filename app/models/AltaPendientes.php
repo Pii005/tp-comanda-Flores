@@ -149,8 +149,8 @@ class AltaPendientes
         if ($empleados && count($empleados) > 0) {
             var_dump("Tiene usuarios");
             foreach ($empleados as $emple) {
-                var_dump($emple->getPuestouser());
-                if ($emple->getPuestouser() == $puesto) {
+                var_dump($emple->getPuesto());
+                if ($emple->getPuesto() == $puesto) {
                     var_dump("id: " . $emple->getid());
                     return $emple->getid();
                 }
@@ -280,6 +280,24 @@ class AltaPendientes
             return $cantidadPendientes == $terminados;
         }
         return false;
+    }
+
+
+    public function mostrarPendientePuesto($puesto)
+    {
+        $pendientes = self::ObtenerPendientes();
+        $pendiestesPuesto = [];
+
+        foreach($pendientes as $p)
+        {
+            var_dump($p->getPuesto() == $puesto);
+            if($p->getPuesto() == $puesto)
+            {
+                $pendiestesPuesto[] = $p->Mostrar();
+            }
+        }
+
+        return $pendiestesPuesto;
     }
 
 }

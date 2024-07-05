@@ -22,7 +22,7 @@ class AltaComida
             $msg = $this->crearNuevo($nombre, $tipoEmpleado, $precio, $tiempoPreparacion);
             return $msg;
         } else {
-            return "comida no encontrada";
+            return "La comida ya existe";
         }
     }
 
@@ -46,21 +46,33 @@ class AltaComida
     }
 
     public static function buscarComida($nombre)
-{
-    self::obtenerAcceso();
-    $consulta = self::$acceso->prepararConsulta(
-        "SELECT nombre FROM comidas WHERE nombre = :nombre");
-    $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
-    $consulta->execute();
+    {
+        self::obtenerAcceso();
+        $consulta = self::$acceso->prepararConsulta(
+            "SELECT nombre FROM comidas WHERE nombre = :nombre");
+        $consulta->bindValue(':nombre', $nombre, PDO::PARAM_STR);
+        $consulta->execute();
 
-    $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
-    if (count($resultados) > 0) {
-        return true;
-    }  
+        $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
+        var_dump(count($resultados) > 0);
+        if (count($resultados) > 0) {
+            
+            return true;
+        }  
+            
+        return false;
+    }
+
+    public static function devolverTodas()
+    {
         
-    return false;
-}
+            //echo "Comida encontrada<br>";
+        $consulta = self::$acceso->prepararConsulta("SELECT * FROM comidas ");
+        $consulta->execute();
+        $comidas = $consulta->fetch(PDO::FETCH_ASSOC);
 
+        return $comidas;
+    }
 
 
     public static function devolverComida($nombre)

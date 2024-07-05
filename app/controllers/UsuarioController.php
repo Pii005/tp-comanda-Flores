@@ -1,5 +1,6 @@
 <?php
 require_once './models/Usuario.php';
+require_once './JWT/creacionjwt.php';
 
 //app\models\Usuario.php
 class UsuarioController 
@@ -38,6 +39,31 @@ class UsuarioController
 
     $response->getBody()->write($payload);
 
+    return $response->withHeader('Content-Type', 'application/json');
+  }
+
+  public function loginUser($request, $response, $args)
+  {
+    $parametros = $request->getParsedBody();
+    if(isset($parametros['email']))
+    {
+      $email = $parametros['email'];
+      
+      $user = Usuario::obtenerUsuario($email);
+
+      if($user != null)
+      {
+        $datos = array('email' => $email, 'puesto' => $user->getPuesto());
+        $token = AutentificadorJWT::CrearToken($datos);
+  
+        $payload = json_encode(array('jwt' => $token));
+      }
+      else{
+        $payload = json_encode(array('Error' => "Usuario no encontrado"));
+
+      }
+    }
+    $response->getBody()->write($payload);
     return $response->withHeader('Content-Type', 'application/json');
   }
 
@@ -170,6 +196,12 @@ class UsuarioController
     return $response->withHeader('Content-Type', 'application/json');
   }
 
+  public function Prueba($request, $response, $args)
+  {
+    $payload = json_encode(array("Exito" => "Permiso permitido"));
+    $response->getBody()->write($payload);
 
+    return $response->withHeader('Content-Type', 'application/json');
+  }
 
 }

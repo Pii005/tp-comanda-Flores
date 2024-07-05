@@ -59,6 +59,35 @@ class AltaMesa
         }
     }
 
+    public static function buscarTodas()
+    {
+        self::obtenerAcceso();
+
+        $consulta = self::$acceso->prepararConsulta("SELECT *
+        FROM mesas");
+        $consulta->execute();
+        // Verificar si hay resultados
+        $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+        $mesas = [];
+
+        if($resultados)
+        {
+            foreach($resultados as $mesa)
+            {
+                $newMesa = new mesa($mesa['id']);
+
+                $newMesa->setEstado($mesa['estado']);
+                $newMesa->setSocioCerro($mesa['socioCerro']);
+                $newMesa->setHoraLlegada($mesa['horaLlegada']);
+                
+                $mesas[] = $newMesa;
+            }
+            return $mesas;
+        }
+        return null;
+    }
+
 
     public function ingresoCliente($idMesa)
     {
@@ -180,6 +209,60 @@ class AltaMesa
         else{
             return false;
         }
+    }
+
+    function cerrarMesa($idPedido, $socioCerro)//cierra pedido pero no la mesa
+    {
+        try
+        {
+            $alta = new AltaPedidos();
+            $pedido = $alta->buscarPedido($idPedido);
+    
+            $verificacion = self::modificarEstado($pedido->getIdMesa(), estadoMesa::cerrada);
+            if($verificacion)
+            {
+                //horaSalidaS
+                self::horaSalida($pedido->getIdMesa(), $socioCerro);
+                return "Mesa cerrada con exito";
+            }
+            return "No se pudo cerrar la mesa";
+        }catch(Exception $e)
+        {
+            return "No se pudo cerrar la mesa";
+        }
+    }
+
+    function horaSalida($idMesa, $socioCerro)
+    {   
+        if(self::buscarMesa($idMesa))
+        {
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
+            $horaSalida = new DateTime();
+            // $estado = estadoMesa::pedido;
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE mesas SET horaSalida = :horaSalida, socioCerro = :socioCerro WHERE id = :id");
+            $consulta->bindValue(':id', $idMesa, PDO::PARAM_INT);
+            $consulta->bindValue(':horaSalida', $horaSalida->format('Y-m-d H:i:s'), PDO::PARAM_STR);
+            $consulta->bindValue(':socioCerro', $socioCerro, PDO::PARAM_STR);
+            $consulta->execute();
+
+            return true;
+        }
+        else{
+            return false;
+        }
+    }   
+
+    public function mostrarTodas()
+    {
+        $mesas = self::buscarTodas();
+
+        $mostrar = [];
+        foreach($mesas as $mesa)
+        {
+            $mostrar[] = $mesa->mostrar();
+        }
+
+        return $mostrar;
     }
 
 }

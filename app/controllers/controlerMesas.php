@@ -70,6 +70,34 @@ class ControlerMesas
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+    public function mostrarTodasMesa($request, $response, $args)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') 
+        {
+            try 
+            {
+                $alta = new AltaMesa();
+                $mesa = $alta->mostrarTodas();
+                // $msg = $mesa->mostrar(); // Ahora devuelve un array
+                $payload = json_encode(array("Mensaje" => $mesa)); // JSON_PRETTY_PRINT para una salida más legible
+
+            }
+            catch (Exception $e)
+            {
+                $payload = json_encode(array("Error" => "No se encontró la mesa"));
+            }
+            
+        }
+        else
+        {
+            $payload = json_encode(array("Error" => "Método no permitido"));
+        }
+
+        $response->getBody()->write($payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
     public function eliminarUnaMesa($request, $response, $args)
     {
         $params = $request->getQueryParams();
