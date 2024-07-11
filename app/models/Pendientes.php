@@ -11,6 +11,7 @@ class Pendientes
     private $comida; //Lo que tiene que ser preparado
     private $horaLlegada;
     private $terminado; //false: sigue en preparacion true: finalizado
+    
 
     public function __construct($idEmpleado, $puesto, $idPedido, $comida)
     {

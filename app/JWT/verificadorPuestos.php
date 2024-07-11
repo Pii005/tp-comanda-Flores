@@ -64,7 +64,7 @@ class VerificadorPuestos
 
         $data = json_decode(json_encode($tokenDescode), true);
         $datosUser = $data['data'];
-
+        var_dump($datosUser['puesto']);
         if($datosUser['puesto'] == TiposEmpleados::mozo || $datosUser['puesto'] == TiposEmpleados::administrador
         || $datosUser['puesto'] == TiposEmpleados::socio)
         {
@@ -133,7 +133,6 @@ class VerificadorPuestos
 
         return $response->withHeader('Content-Type', 'application/json');
     }
-
 
 }
 

@@ -141,15 +141,14 @@ class AltaPedidos
     public function crearYGuardar($pedido)
     {
         $consulta = $this->acceso->prepararConsulta("INSERT INTO pedidos
-        (id, nombreCliente, idMesa, imagen, estadoPedido, tiempoPreparacion, inicioPedido)
-        VALUES (:id, :nombreCliente, :idMesa, :imagen, :estadoPedido, :tiempoPreparacion, :inicioPedido)");//Query
+        (id, nombreCliente, idMesa, imagen, estadoPedido, inicioPedido)
+        VALUES (:id, :nombreCliente, :idMesa, :imagen, :estadoPedido,  :inicioPedido)");//Query
 
         $consulta->bindValue(':id', $pedido->getId(), PDO::PARAM_STR);
         $consulta->bindValue(':nombreCliente', $pedido->getNombreCliente(), PDO::PARAM_STR);
         $consulta->bindValue(':idMesa', $pedido->getIdMesa(), PDO::PARAM_STR);
         $consulta->bindValue(':imagen', $pedido->getImagen(), PDO::PARAM_STR);
         $consulta->bindValue(':estadoPedido', $pedido->getEstadoPedido(), PDO::PARAM_STR);
-        $consulta->bindValue(':tiempoPreparacion', $pedido->getTiempoPreparacion(), PDO::PARAM_STR);
         $consulta->bindValue(':inicioPedido', $pedido->getInicioPedido()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
         $consulta->execute();
 
@@ -221,7 +220,7 @@ class AltaPedidos
         try
         {
             if($estado != EstadoPedido::servido && $estado != EstadoPedido::listo &&
-            $estado != EstadoPedido::pagado)
+            $estado != EstadoPedido::pagado && $estado != EstadoPedido::esperando && $estado != EstadoPedido::preparando)
             {
                 throw new JsonException("Tipo de estado no valido CambiarEstados-AltaPedidos");
             }
@@ -236,12 +235,51 @@ class AltaPedidos
         }
         catch (Exception $e)
         {
-            throw new JsonException("error en CambiarEstados-AltaPedidos");
+            throw new JsonException("error en CambiarEstados-AltaPedidos: " . $e->getMessage());
         }
         // echo "Modificado con exito!<br>";
 
     }
 
+    public function estadoEnPreparacion($idPedido)
+    {
+        // $tiempoPreparacion = AltaComida::sumarTiempos($Comidas);
+        //buscoPedido
+        if(self::buscarPedido($idPedido))
+        {
+            //busco pendientes:
+            $pendientes = AltaPendientes::buscarPendientes($idPedido);
+            $tiempoPreparacion = AltaComida::sumarTiempos($pendientes);
+
+            self::cambiarEstados($idPedido, EstadoPedido::preparando);
+            self::establecerTiempoPreparacion($idPedido, $tiempoPreparacion);
+            return "Pedido pasado a preparacion";
+        }
+        return "No se pudo cambiar a prepracion";
+    }
+
+    function establecerTiempoPreparacion($idPedido, $tiempoPreparacion)
+    {
+        try
+        {
+            $finalizacion = new DateTime();
+            $preparadoEnTiempo = self::verificarEnTiempo($idPedido, $finalizacion);
+
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
+
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos 
+            SET tiempoPreparacion = :tiempoPreparacion
+            WHERE id = :id");
+            $consulta->bindValue(':id', $idPedido, PDO::PARAM_STR);
+            $consulta->bindValue(':tiempoPreparacion', $tiempoPreparacion, PDO::PARAM_STR);
+            $consulta->execute();
+
+        }
+        catch (Exception $e)
+        {
+            throw new JsonException("error en establecerFinalizar-AltaPedidos - ". $e->getMessage());
+        }
+    }
 
     public function pedidoTerminado($idPedido)
     {
@@ -328,7 +366,7 @@ class AltaPedidos
         }
     }
 
-    function cerrarPedido($idPedido)//cierra pedido pero no la mesa
+    function cerrarPedido($idPedido, $socioCerro)//cierra pedido pero no la mesa
     {
         $pedido = self::buscarPedido($idPedido);
 
@@ -338,15 +376,35 @@ class AltaPedidos
             {
                 //cambiar estado - pedido
                 $this->cambiarEstados($idPedido, EstadoPedido::pagado);
+                $this->socioCerro($idPedido, $socioCerro);
                 //cambiar estado - mesa
                 AltaMesa::modificarEstado($pedido->getIdMesa(), estadoMesa::pagando);
-                return "Pedido cerrado - retirar dinero";
+                return "Pedido cerrado y mesa cerrada";
             }
             return "El pedido ya esta cerrado";
         }
         return "El pedido no existe";
 
     }
+
+    function socioCerro($idPedido, $socioCerro)
+    {   
+        if(self::buscarPedido($idPedido))
+        {
+            $objAccesoDato = AccesoDatos::obtenerInstancia();
+            $horaSalida = new DateTime();
+            // $estado = estadoMesa::pedido;
+            $consulta = $objAccesoDato->prepararConsulta("UPDATE pedidos SET socioCerro = :socioCerro WHERE id = :id");
+            $consulta->bindValue(':id', $idPedido, PDO::PARAM_INT);
+            $consulta->bindValue(':socioCerro', $socioCerro, PDO::PARAM_STR);
+            $consulta->execute();
+
+            return true;
+        }
+        else{
+            return false;
+        }
+    } 
 
     public function obtenerTiempoPreparacion($idPedido)
     {

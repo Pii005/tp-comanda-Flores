@@ -78,7 +78,6 @@ class AltaMesa
                 $newMesa = new mesa($mesa['id']);
 
                 $newMesa->setEstado($mesa['estado']);
-                $newMesa->setSocioCerro($mesa['socioCerro']);
                 $newMesa->setHoraLlegada($mesa['horaLlegada']);
                 
                 $mesas[] = $newMesa;
@@ -184,8 +183,6 @@ class AltaMesa
             $MesaObj = new Mesa($id);
             $MesaObj->setEstado($Mesa['estado']);
             $MesaObj->setHoraLlegada($Mesa['horaLlegada']);
-            $MesaObj->setHoraSalida($Mesa['horaSalida']);
-            $MesaObj->setSocioCerro($Mesa['socioCerro']);
 
             return $MesaObj->mostrar();
         } else {
@@ -211,7 +208,7 @@ class AltaMesa
         }
     }
 
-    function cerrarMesa($idPedido, $socioCerro)//cierra pedido pero no la mesa
+    function cerrarMesa($idPedido)//cierra pedido pero no la mesa
     {
         try
         {
@@ -222,7 +219,6 @@ class AltaMesa
             if($verificacion)
             {
                 //horaSalidaS
-                self::horaSalida($pedido->getIdMesa(), $socioCerro);
                 return "Mesa cerrada con exito";
             }
             return "No se pudo cerrar la mesa";
@@ -231,26 +227,6 @@ class AltaMesa
             return "No se pudo cerrar la mesa";
         }
     }
-
-    function horaSalida($idMesa, $socioCerro)
-    {   
-        if(self::buscarMesa($idMesa))
-        {
-            $objAccesoDato = AccesoDatos::obtenerInstancia();
-            $horaSalida = new DateTime();
-            // $estado = estadoMesa::pedido;
-            $consulta = $objAccesoDato->prepararConsulta("UPDATE mesas SET horaSalida = :horaSalida, socioCerro = :socioCerro WHERE id = :id");
-            $consulta->bindValue(':id', $idMesa, PDO::PARAM_INT);
-            $consulta->bindValue(':horaSalida', $horaSalida->format('Y-m-d H:i:s'), PDO::PARAM_STR);
-            $consulta->bindValue(':socioCerro', $socioCerro, PDO::PARAM_STR);
-            $consulta->execute();
-
-            return true;
-        }
-        else{
-            return false;
-        }
-    }   
 
     public function mostrarTodas()
     {
@@ -264,6 +240,41 @@ class AltaMesa
 
         return $mostrar;
     }
+
+    public static function mesaMasUsada()
+    {
+        // Obtener todas las mesas usando el método buscarTodas
+        $mesas = self::buscarTodas();
+
+        if ($mesas) {
+            // Contar la frecuencia de cada id de mesa
+            $idFrecuencia = [];
+            foreach ($mesas as $mesa) {
+                $id = $mesa->getId(); // Supongo que tienes un método getId en tu clase mesa
+                if (isset($idFrecuencia[$id])) {
+                    $idFrecuencia[$id]++;
+                } else {
+                    $idFrecuencia[$id] = 1;
+                }
+            }
+
+            // Encontrar el id más frecuente
+            $maxFrecuencia = 0;
+            $idMasFrecuente = null;
+            foreach ($idFrecuencia as $id => $frecuencia) {
+                if ($frecuencia > $maxFrecuencia) {
+                    $maxFrecuencia = $frecuencia;
+                    $idMasFrecuente = $id;
+                }
+            }
+
+            return $idMasFrecuente;
+        }
+
+        return null;
+    }
+
+
 
 }
 

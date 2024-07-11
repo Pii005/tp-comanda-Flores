@@ -40,6 +40,31 @@ class ControlerPedidos
 
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function cambiarAPreparacion($request, $response, $args)
+    {
+        $params = $request->getParsedBody();
+        if(isset($params['idPedido'])){
+            $idPedido = $params['idPedido'];
+
+            try{
+
+                $Alta = new AltaPedidos();
+
+                $msg = $Alta->estadoEnPreparacion($idPedido);
+
+                $payload = json_encode(array("mensaje" => $msg));
+
+            }catch(Exception $e){
+                $payload = json_encode(array("Error" => "No se pudo cambiar el pedido - " . $e->getMessage()));
+            }
+        }else {
+            $payload = json_encode(array("Error" => "Parametros no validos"));
+        }
+        $response->getBody()->write($payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
     
 
     public function mostrarPedido($request, $response, $args)

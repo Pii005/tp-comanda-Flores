@@ -135,5 +135,21 @@ class ControlerMesas
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+    public function mesaMasUsada($request, $response, $args)
+    {
+        try
+        {
+            $idMesa = AltaMesa::mesaMasUsada();
+
+            $payload = json_encode(array("Mensaje" => "La mesa mas usada es la: ". $idMesa));
+        }
+        catch (Exception $e)
+        {
+            $payload = json_encode(array("Error" => "No se encontró la mesa"));
+        }
+        $response->getBody()->write($payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 
 }

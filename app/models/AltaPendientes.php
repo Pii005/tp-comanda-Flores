@@ -95,7 +95,6 @@ class AltaPendientes
 
         // Obtener las asignaciones pendientes
         $pendientes = self::ObtenerPendientes();
-        var_dump("linea: 96: "); // Verifica que los pendientes se obtienen correctamente
 
         // Si hay más de un pendiente
         if ($pendientes != null && count($pendientes) > 0) { // Cambiar a > 0 para incluir un solo pendiente
@@ -103,7 +102,6 @@ class AltaPendientes
                 // Asegúrate de que muestra los valores correctos
                 if ($pendiente->getPuesto() === $puesto) {
                     $idEmpleado = $pendiente->getIdEmpleado();
-                    var_dump("linea: 104: ". $idEmpleado); // Verifica que el ID del empleado sea correcto
 
                     if (!isset($conteoEmpleados[$idEmpleado])) {
                         $conteoEmpleados[$idEmpleado] = 0;
@@ -111,25 +109,20 @@ class AltaPendientes
                     $conteoEmpleados[$idEmpleado]++;
                 }
             }
-            var_dump("linea: 112: "); // Verifica el conteo de asignaciones
-            var_dump($conteoEmpleados);
             $empleadoMenosAsignado = null;
             $minAsignaciones = PHP_INT_MAX;
             
             if(count($conteoEmpleados) != 0)
             {
-                var_dump("Entro aca");
                 foreach ($conteoEmpleados as $idEmpleado => $cantidadAsignaciones) {
                     if ($cantidadAsignaciones < $minAsignaciones) {
                         $minAsignaciones = $cantidadAsignaciones;
                         $empleadoMenosAsignado = $idEmpleado;
                     }
                 }
-                var_dump("linea: 124: ".$empleadoMenosAsignado); // Verifica el ID del empleado menos asignado
                 return $empleadoMenosAsignado;
             }else
             {
-                var_dump("Entro aca x2");
                 return self::buscarEmpleado($puesto);
             }
 
@@ -138,7 +131,7 @@ class AltaPendientes
             // Si no hay pendientes o solo hay uno, buscar empleados con el puesto especificado
             return self::buscarEmpleado($puesto);
         }
-        return null;
+
     }
 
     static function buscarEmpleado($puesto)
@@ -147,11 +140,8 @@ class AltaPendientes
         // var_dump("linea: 129: ".$empleados); // Verifica que los empleados se obtienen correctamente
 
         if ($empleados && count($empleados) > 0) {
-            var_dump("Tiene usuarios");
             foreach ($empleados as $emple) {
-                var_dump($emple->getPuesto());
                 if ($emple->getPuesto() == $puesto) {
-                    var_dump("id: " . $emple->getid());
                     return $emple->getid();
                 }
             }
@@ -180,18 +170,15 @@ class AltaPendientes
         // var_dump("verificando comidas...");
         if($comidasValidas)
         {
-            var_dump("comidas validas");
             try
             {
                 foreach($items as $comida)
                 {
-                    var_dump($comida);
                     $puesto = AltaComida::devolverPuesto($comida);
                     // var_dump($puesto, $idPedido, $comida);
                     if($puesto != null)
                     {
                         $idEmpleado = self::buscarMenosAsignado($puesto);
-                        var_dump("Id empleado: ".$idEmpleado);
                         if($idEmpleado != null)
                         {
                             // var_dump("Entro");
@@ -291,7 +278,7 @@ class AltaPendientes
         foreach($pendientes as $p)
         {
             var_dump($p->getPuesto() == $puesto);
-            if($p->getPuesto() == $puesto)
+            if($p->getPuesto() == $puesto && $p->getTerminado() == 0)
             {
                 $pendiestesPuesto[] = $p->Mostrar();
             }
@@ -299,5 +286,9 @@ class AltaPendientes
 
         return $pendiestesPuesto;
     }
+
+
+
+
 
 }

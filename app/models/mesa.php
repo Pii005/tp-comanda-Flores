@@ -9,8 +9,8 @@ class mesa
     private $id;//único 
     private $estado;//Default Libre 
     private $horaLlegada;//un time now 
-    private $horaSalida;//un now cuando el cliente cierra mesa
-    private $socioCerro; //Socio que cerro la mesa
+    // private $horaSalida;//un now cuando el cliente cierra mesa
+    // private $socioCerro; //Socio que cerro la mesa
 
     public function __construct($id)
     {
@@ -30,12 +30,12 @@ class mesa
         "Hora llegada" => $this->horaLlegada,
     );
 
-    if ($this->horaSalida != "0000-00-00 00:00:00" && $this->horaSalida != null) {
-        $data["Hora que el cliente se fue"] = $this->horaSalida;
-    }
-    if ($this->socioCerro != null) {
-        $data["Socio que cerro la mesa"] = $this->socioCerro;
-    }
+    // if ($this->horaSalida != "0000-00-00 00:00:00" && $this->horaSalida != null) {
+    //     $data["Hora que el cliente se fue"] = $this->horaSalida;
+    // }
+    // if ($this->socioCerro != null) {
+    //     $data["Socio que cerro la mesa"] = $this->socioCerro;
+    // }
 
     return $data;
 }
@@ -74,26 +74,6 @@ class mesa
         $this->horaLlegada = $horaLlegada;
     }
 
-    // Getter y Setter para $horaSalida
-    public function getHoraSalida() {
-        return $this->horaSalida;
-    }
-
-    public function setHoraSalida($horaSalida) {
-        $this->horaSalida = $horaSalida;
-    }
-
-    // Getter y Setter para $socioCerro
-    public function getSocioCerro() {
-        return $this->socioCerro;
-    }
-
-    public function setSocioCerro($socioCerro) {
-        $this->socioCerro = $socioCerro;
-    }
-
-    // Getter y Setter para $acceso
-    
 }
 
 

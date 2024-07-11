@@ -30,6 +30,7 @@ require_once './csv/controlerCsv.php';
 require_once './middlewares/mddUsuarios.php';
 require_once './middlewares/validarResenia.php';
 require_once './middlewares/mddCsv.php';
+require_once './middlewares/mddTerminadoPendiente.php';
 //Jwt
 require_once './JWT/creacionjwt.php';
 require_once './JWT/verificadorPuestos.php';
@@ -64,22 +65,34 @@ $app->group('/usuario',  function (RouteCollectorProxy $group)
   $group->get('/alta', \UsuarioController::class . ':Altadenuevo')->add(VerificadorPuestos::class . ':verificarSocios');
   $group->post('/modificar', \UsuarioController::class . ':modificarUsuario')->add(VerificadorPuestos::class . ':verificarSocios');
 
-  $group->post('/login', \UsuarioController::class . ':loginUser')->add(VerificadorPuestos::class . ':verificarSocios');
-});
+  $group->post('/login', \UsuarioController::class . ':loginUser');
+});//->add(VerificadorPuestos::class . ':verificarSocios')
 
+
+
+
+// 
 $app->group('/pedidos', function (RouteCollectorProxy $group)
 {
   $group->post('/ingresar', \ControlerPedidos::class . ':ingresarPedido')->add(VerificadorPuestos::class . ':verificarMozo');
-  $group->get('/mostrar', \ControlerPedidos::class . ':mostrarPedido')->add(VerificadorPuestos::class . ':verificarMozo');
+
+  $group->post('/Preparacion', \ControlerPedidos::class . ':cambiarAPreparacion')->add(VerificadorPuestos::class . ':verificarEmpleados');
+
+  $group->get('/mostrar', \ControlerPedidos::class . ':mostrarPedido');
+
   $group->get('/eliminar', \ControlerPedidos::class . ':borrarPedido')->add(VerificadorPuestos::class . ':verificarMozo');
+
   $group->post('/modificar', \ControlerPedidos::class . ':modificarPedido')->add(VerificadorPuestos::class . ':verificarMozo');
+
   $group->post('/mostrarPuesto', \ControlerPedidos::class . ':mostrarPendientePuesto')->add(VerificadorPuestos::class . ':verificarEmpleados'); 
-  $group->post('/terminar', \ControlerPedidos::class . ':terminarPendiente')->add(VerificadorPuestos::class . ':verificarEmpleados');
+
+  $group->post('/terminar', \ControlerPedidos::class . ':terminarPendiente')
+  ->add(VerificadorPuestos::class . ':verificarEmpleados')
+  ->add(new MddTerminadoPendiente());
+
   $group->post('/entregar', \ControlerPedidos::class . ':entregarPedido')->add(VerificadorPuestos::class . ':verificarMozo');
   //cerrar pedido (No cierra mesa) y cerrar mesa
-  $group->post('/cerrarPedido', \ControlerCerrarPedido::class . ':cerrarPedido')->add(VerificadorPuestos::class . ':verificarMozo'); 
-  $group->post('/cerrarMesa', \ControlerCerrarPedido::class . ':cerrarMesa')->add(VerificadorPuestos::class . ':verificarSocios'); 
-
+  $group->post('/cerrarPedido', \ControlerCerrarPedido::class . ':cerrarPedido')->add(VerificadorPuestos::class . ':verificarSocios'); 
 });
 
 $app->group('/clientes',  function (RouteCollectorProxy $group)
@@ -88,13 +101,14 @@ $app->group('/clientes',  function (RouteCollectorProxy $group)
 });
 
 
-
+// 
 $app->group('/mesa',  function (RouteCollectorProxy $group)
 {
   $group->post('/ingresar', \ControlerMesas::class . ':IngresarMesa')->add(VerificadorPuestos::class . ':verificarMozo');
   $group->get('/mostrarUna', \ControlerMesas::class . ':mostrarUnaMesa')->add(VerificadorPuestos::class . ':verificarMozo');
   $group->get('/eliminarUna', \ControlerMesas::class . ':eliminarUnaMesa')->add(VerificadorPuestos::class . ':verificarMozo');
   $group->get('/mostrarTodas', \ControlerMesas::class . ':mostrarTodasMesa')->add(VerificadorPuestos::class . ':verificarMozo');
+  $group->get('/masUsada', \ControlerMesas::class . ':mesaMasUsada')->add(VerificadorPuestos::class . ':verificarSocios');
 
 });
 

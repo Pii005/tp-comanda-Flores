@@ -118,7 +118,7 @@ class AltaComida
         $sumaSegundos = 0;
 
         foreach ($comidasArray as $nombreComida) {
-            $comida = self::devolverComida($nombreComida);
+            $comida = self::devolverComida($nombreComida->getComida());
             if ($comida != null) {
                 $tiempoPreparacion = $comida->getTiempoPreparacion(); // Tiempo en formato HH:MM:SS
 

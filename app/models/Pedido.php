@@ -19,6 +19,8 @@ class Pedidos
 
     private $preparadoEnTiempo; //default en null y cuando llego a finalizacion se asigna true o false
 
+    private $socioCerro;
+
 
     public function __construct($id ,$nombre,$idMesa, $tiempoPreparacion, $imagen)
     {
@@ -28,7 +30,7 @@ class Pedidos
         $this->inicioPedido =  $this->obtenerTiempo();
         $this->imagen = $imagen;
         $this->tiempoPreparacion =  $tiempoPreparacion;
-        $this->estadoPedido = EstadoPedido::preparando;
+        $this->estadoPedido = EstadoPedido::esperando;
         
     }
 
@@ -63,13 +65,20 @@ class Pedidos
             $datos['Preparado en Tiempo'] = $this->preparadoEnTiempo ? true : false;
         }
         
-        // $pendientes = AltaPendientes::mostrarPendientes($this->id);
-
-        // if ($pendientes) {
-        //     $datos['Pendientes'] = $pendientes;
-        // }
+        if($this->socioCerro != null){
+            $datos['Socio Cerro'] = $this->socioCerro;
+        }
 
         return $datos;
+    }
+
+    public function getSocioCerro() 
+    { 
+        return $this->socioCerro;
+    }
+    public function setSocioCerro($a) 
+    { 
+        $this->socioCerro = $a;
     }
 
 

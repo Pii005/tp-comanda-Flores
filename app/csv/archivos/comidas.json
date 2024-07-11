@@ -1,8 +1,8 @@
 [
     {
-        "nombre": "Algo",
-        "tipoEmpleado": "cocinero",
-        "precio": "4500",
-        "tiempoPreparacion": "00:30:00"
+        "nombre": "pure",
+        "tipoEmpleado": "cocina",
+        "precio": "1200",
+        "tiempoPreparacion": "00:01:00"
     }
 ]

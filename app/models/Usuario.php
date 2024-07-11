@@ -73,35 +73,35 @@ class Usuario
     }
 
     public static function buscarPuesto($puesto)
-{
-    $objAccesoDatos = AccesoDatos::obtenerInstancia();
-    $consulta = $objAccesoDatos->prepararConsulta("SELECT id, nombre, apellido, puesto, ingreso, baja, clave, Email
-        FROM empleados WHERE puesto = :puesto");
-    $consulta->bindValue(':puesto', $puesto, PDO::PARAM_STR);
-    $consulta->execute();
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT id, nombre, apellido, puesto, ingreso, baja, clave, Email
+            FROM empleados WHERE puesto = :puesto");
+        $consulta->bindValue(':puesto', $puesto, PDO::PARAM_STR);
+        $consulta->execute();
 
-    // Fetch all results as associative arrays
-    $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
+        // Fetch all results as associative arrays
+        $resultados = $consulta->fetchAll(PDO::FETCH_ASSOC);
 
-    // Create an array to hold Usuario objects
-    $usuarios = [];
+        // Create an array to hold Usuario objects
+        $usuarios = [];
 
-    // Loop through each result and create a Usuario object
-    foreach ($resultados as $resultado) {
-        $usuario = new Usuario($resultado['nombre'], $resultado['apellido'], $resultado['puesto'], $resultado['clave'], $resultado['Email']);
-        $usuario->setId($resultado['id']);
-        $usuario->setAlta(new DateTime($resultado['ingreso']));
+        // Loop through each result and create a Usuario object
+        foreach ($resultados as $resultado) {
+            $usuario = new Usuario($resultado['nombre'], $resultado['apellido'], $resultado['puesto'], $resultado['clave'], $resultado['Email']);
+            $usuario->setId($resultado['id']);
+            $usuario->setAlta(new DateTime($resultado['ingreso']));
 
-        // Optionally set the 'baja' field if needed
-        if ($resultado['baja'] !== null) {
-            $usuario->baja = new DateTime($resultado['baja']);
+            // Optionally set the 'baja' field if needed
+            if ($resultado['baja'] !== null) {
+                $usuario->baja = new DateTime($resultado['baja']);
+            }
+
+            $usuarios[] = $usuario;
         }
 
-        $usuarios[] = $usuario;
+        return $usuarios;
     }
-
-    return $usuarios;
-}
 
     public function crearUsuario()
     {
